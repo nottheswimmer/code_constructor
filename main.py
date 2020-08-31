@@ -1,0 +1,300 @@
+import json
+from typing import Dict, List, Union
+
+from field_types import Type, String, Integer, Boolean, Array
+from utils import any_to_upper_camel, any_to_lower_camel, camel_to_lower_snake, indent, primitive_to_type
+
+
+class MetaClass:
+    def __init__(self, name: str, fields: Dict[str, Type]):
+        # Normalize class name as UpperCamel
+        self.name = any_to_upper_camel(name)
+
+        # Normalize field name as lowerCamel
+        self.fields = {any_to_lower_camel(field): t for field, t in fields.items()}
+
+    @classmethod
+    def from_dict(cls, name: str, data: Dict[str, Union[str, bool, int, list]]):
+        # TODO: Support for None
+        # TODO: Support for Dict (nested structures)
+        fields = {}
+        for key, value in data.items():
+            fields[key] = primitive_to_type(value, field_name=key)
+
+        return cls(name=name, fields=fields)
+
+    @classmethod
+    def from_json(cls, name: str, data: str):
+        return cls.from_dict(name, json.loads(data))
+
+    @property
+    def python_name(self) -> str:
+        return self.name
+
+    @property
+    def java_name(self) -> str:
+        return self.name
+
+    @property
+    def go_name(self) -> str:
+        return self.name
+
+    @property
+    def c_name(self) -> str:
+        return self.name
+
+    @property
+    def python_fields(self) -> Dict[str, Type]:
+        import keyword
+
+        def add_field_to_reserved_words(field_name: str) -> str:
+            if field_name in dir(__builtins__):
+                return field_name + "_field"
+            if keyword.iskeyword(field_name):
+                return field_name + "_field"
+            return field_name
+
+        return {add_field_to_reserved_words(camel_to_lower_snake(field)): t for field, t in self.fields.items()}
+
+    @property
+    def java_fields(self) -> Dict[str, Type]:
+        return {field: t for field, t in self.fields.items()}
+
+    @property
+    def go_fields(self) -> Dict[str, Type]:
+        return {any_to_upper_camel(field): t for field, t in self.fields.items()}
+
+    @property
+    def c_fields(self) -> Dict[str, Type]:
+        return {camel_to_lower_snake(field): t for field, t in self.fields.items()}
+
+    @property
+    def c_includes(self) -> List[str]:
+        includes = set()
+        for field_type in self.fields.values():
+            includes.update(field_type.c_includes)
+        return sorted(includes)
+
+    def to_python(self) -> str:
+        lines = []
+
+        for field, t in self.c_fields.items():
+            for field_type in t.embedded_objects:
+                lines.append(field_type.object_class.to_python())
+                lines.append('')
+
+        lines.append(f"class {self.python_name}:")
+        constructor = indent(1) + "def __init__(self, "
+        constructor_body_lines = []
+        for field, t in self.python_fields.items():
+            constructor += f"{field}: {t.to_python}, "
+            constructor_body_lines.append(indent(2) + f"self.{field} = {field}")
+        # Remove trailing ", " and close signature / open body
+        constructor = constructor[:-2] + "):"
+        lines.append(constructor)
+        lines += constructor_body_lines
+
+        return '\n'.join(lines)
+
+    def to_java(self) -> str:
+        lines = []
+
+        lines.append(f"class {self.java_name} {{")  # TODO: Scope
+        field_lines = []
+        for field, t in self.java_fields.items():
+            # TODO: We probably don't actually want public fields. Java prefers getters and setters.
+            field_lines.append(indent(1) + f"public {t.to_java} {field};")  # TODO: Scope
+        lines += field_lines
+        lines.append('')
+
+        # No constructor is needed if we have no fields
+        if self.java_fields:
+            constructor = indent(1) + f"public {self.java_name}("  # TODO: Scope
+            constructor_lines = []
+            for field, t in self.java_fields.items():
+                constructor += f"{t.to_java} {field}, "
+                constructor_lines.append(indent(2) + f"this.{field} = {field};")
+            # Remove trailing ", " and close signature / open body
+            constructor = constructor[:-2] + ") {"
+            lines.append(constructor)
+            lines += constructor_lines
+
+            # Add closing curly
+            lines.append(indent(1) + "}")
+
+        # Add final closing curly
+        lines.append("}")
+
+        for field, t in self.c_fields.items():
+            for field_type in t.embedded_objects:
+                lines.append('')
+                lines.append(field_type.object_class.to_java())
+
+        return '\n'.join(lines)
+
+    def to_go(self) -> str:
+        lines = []
+
+        for field, t in self.c_fields.items():
+            for field_type in t.embedded_objects:
+                lines.append(field_type.object_class.to_go())
+                lines.append('')
+
+        lines.append(f"type {self.go_name} struct {{")
+        constructor_lines = []
+        for field, t in self.go_fields.items():
+            constructor_lines.append(indent(1) + f"{field} {t.to_go}")  # TODO: Scope
+        lines += constructor_lines
+        lines.append("}")
+        return '\n'.join(lines)
+
+    def to_c(self, imports=True) -> str:
+        lines = []
+        if imports:
+            for include in self.c_includes:
+                lines.append(f"#include <{include}>")
+            # Add another line if there were includes needed
+            if lines:
+                lines.append('')
+
+        for field, t in self.c_fields.items():
+            for field_type in t.embedded_objects:
+                lines.append(field_type.object_class.to_c(imports=False))
+                lines.append('')
+
+        lines.append(f"struct {self.c_name} {{")
+        for field, t in self.c_fields.items():
+            lines.append(indent(1) + f"{t.to_c} {field + t.c_field_suffix};")
+        lines.append("};")
+        return '\n'.join(lines)
+
+    def _dump(self):
+        print("[To Python]")
+        print(self.to_python())
+        print()
+
+        print("[To Java]")
+        print(self.to_java())
+        print()
+
+        print("[To Go]")
+        print(self.to_go())
+        print()
+
+        print("[To C]")
+        print(self.to_c())
+        print()
+
+
+def main():
+    person = MetaClass("person",
+                       {"name": String(),
+                        "age": Integer(),
+                        "happy": Boolean(),
+                        "favorite_colors": Array(String())})
+    # person._dump()
+
+    car_owner = MetaClass.from_json("CarOwner", """\
+{
+    "name":"John",
+    "age":30,
+    "cars": [
+        "Ford",
+        "BMW",
+        "Fiat"
+    ]
+}
+""")
+    # car_owner._dump()
+
+    squad = MetaClass.from_json("Squad", """\
+{
+  "squadName": "Super hero squad",
+  "homeTown": "Metro City",
+  "formed": 2016,
+  "secretBase": "Super tower",
+  "active": true,
+  "members": [
+    {
+      "name": "Molecule Man",
+      "age": 29,
+      "secretIdentity": "Dan Jukes",
+      "powers": [
+        "Radiation resistance",
+        "Turning tiny",
+        "Radiation blast"
+      ]
+    },
+    {
+      "name": "Madame Uppercut",
+      "age": 39,
+      "secretIdentity": "Jane Wilson",
+      "powers": [
+        "Million tonne punch",
+        "Damage resistance",
+        "Superhuman reflexes"
+      ]
+    },
+    {
+      "name": "Eternal Flame",
+      "age": 1000000,
+      "secretIdentity": "Unknown",
+      "powers": [
+        "Immortality",
+        "Heat Immunity",
+        "Inferno",
+        "Teleportation",
+        "Interdimensional travel"
+      ]
+    }
+  ]
+}
+""")
+    # squad._dump()
+
+    course = MetaClass.from_json("course", """\
+{
+  "id": "string",
+  "uuid": "string",
+  "externalId": "string",
+  "dataSourceId": "string",
+  "courseId": "string",
+  "name": "string",
+  "description": "string",
+  "created": "2020-08-30T23:47:15.769Z",
+  "modified": "2020-08-30T23:47:15.769Z",
+  "organization": true,
+  "ultraStatus": "Undecided",
+  "allowGuests": true,
+  "closedComplete": true,
+  "termId": "string",
+  "availability": {
+    "available": "Yes",
+    "duration": {
+      "type": "Continuous",
+      "start": "2020-08-30T23:47:15.769Z",
+      "end": "2020-08-30T23:47:15.769Z",
+      "daysOfUse": 0
+    }
+  },
+  "enrollment": {
+    "type": "InstructorLed",
+    "start": "2020-08-30T23:47:15.769Z",
+    "end": "2020-08-30T23:47:15.769Z",
+    "accessCode": "string"
+  },
+  "locale": {
+    "id": "string",
+    "force": true
+  },
+  "hasChildren": true,
+  "parentId": "string",
+  "externalAccessUrl": "string",
+  "guestAccessUrl": "string"
+}
+""")
+    course._dump()
+
+
+if __name__ == '__main__':
+    main()
