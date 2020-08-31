@@ -32,9 +32,17 @@ if TYPE_CHECKING:
 
 
 class Type(ABC):
+    def __init__(self, value):
+        self.value = value
+
     @property
     @abstractmethod
     def to_python(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def to_python_value(self) -> str:
         pass
 
     @property
@@ -66,13 +74,18 @@ class Type(ABC):
 
 
 class String(Type):
-    def __init__(self, length: int = 255):
+    def __init__(self, value: str, length: int = 255):
+        super().__init__(value=value)
         self.length = length
 
     to_python = 'str'
     to_java = 'String'
     to_go = 'string'
     to_c = 'char'
+
+    @property
+    def to_python_value(self) -> str:
+        return repr(self.value)
 
     @property
     def c_field_suffix(self) -> str:
@@ -85,6 +98,10 @@ class Integer(Type):
     to_go = 'int'
     to_c = 'int'
 
+    @property
+    def to_python_value(self) -> str:
+        return repr(self.value)
+
 
 class Boolean(Type):
     to_python = 'bool'
@@ -93,11 +110,28 @@ class Boolean(Type):
     to_c = 'bool'
     c_includes = {'stdbool.h'}
 
+    @property
+    def to_python_value(self) -> str:
+        return repr(self.value)
+
 
 class Array(Type):
-    def __init__(self, item_type: Type, length: int = 255):
+    def __init__(self, value: List, item_type: Type, length: int = 255):
+        super().__init__(value=value)
         self.item_type = item_type
         self.length = length
+
+    @property
+    def to_python_value(self) -> str:
+        from copy import deepcopy
+        item_type_copy = deepcopy(self.item_type)
+        value = "["
+        for item in self.value:
+            item_type_copy.value = item
+            value += item_type_copy.to_python_value + ", "
+        value = value.rstrip(", ")
+        value += "]"
+        return value
 
     @property
     def embedded_objects(self) -> List['Object']:
@@ -129,12 +163,21 @@ class Array(Type):
 
 
 class Object(Type):
-    def __init__(self, object_class: 'MetaClass'):
+    def __init__(self, value: dict, object_class: 'MetaClass'):
+        super().__init__(value=value)
         self.object_class = object_class
 
     @property
     def embedded_objects(self) -> List['Object']:
         return [self]
+
+    @property
+    def to_python_value(self) -> str:
+        from main import MetaClass
+
+        # Not using self.object_class so that overriding the value is supported...
+        object_class = MetaClass.from_dict(name=self.object_class.name, data=self.value)
+        return object_class.to_python_construction()
 
     @property
     def to_python(self) -> str:

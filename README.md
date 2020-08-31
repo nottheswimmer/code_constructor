@@ -6,10 +6,11 @@ Takes a JSON payload and converts it to code that defines classes or structures 
 
 - Identify bugs and write tests
 - Add more languages
-- Output usage examples as well
+- Output usage examples as well (currently only implemented for Python)
+- String methods (currently only implemented for Python)
 - Optional getters and setters for Java
 - Marshalling / Unmarshalling support in Go
-- Reserved keyword and builtin shadowing protection (currently only implemented in Python)
+- Reserved keyword and builtin shadowing protection (currently only implemented for Python)
 
 ## Supported Languages
 
@@ -29,55 +30,6 @@ Takes a JSON payload and converts it to code that defines classes or structures 
 
 ### Squad (example taken from the Mozilla Docs)
 
-```python
-    squad = MetaClass.from_json("Squad", """\
-{
-  "squadName": "Super hero squad",
-  "homeTown": "Metro City",
-  "formed": 2016,
-  "secretBase": "Super tower",
-  "active": true,
-  "members": [
-    {
-      "name": "Molecule Man",
-      "age": 29,
-      "secretIdentity": "Dan Jukes",
-      "powers": [
-        "Radiation resistance",
-        "Turning tiny",
-        "Radiation blast"
-      ]
-    },
-    {
-      "name": "Madame Uppercut",
-      "age": 39,
-      "secretIdentity": "Jane Wilson",
-      "powers": [
-        "Million tonne punch",
-        "Damage resistance",
-        "Superhuman reflexes"
-      ]
-    },
-    {
-      "name": "Eternal Flame",
-      "age": 1000000,
-      "secretIdentity": "Unknown",
-      "powers": [
-        "Immortality",
-        "Heat Immunity",
-        "Inferno",
-        "Teleportation",
-        "Interdimensional travel"
-      ]
-    }
-  ]
-}
-""")
-    squad._dump()
-```
-
-Output:
-
 [To Python]
 ```python
 class Member:
@@ -87,6 +39,9 @@ class Member:
         self.secret_identity = secret_identity
         self.powers = powers
 
+    def __repr__(self):
+        return f"Member(name={self.name!r}, age={self.age!r}, secret_identity={self.secret_identity!r}, powers={self.powers!r})"
+
 class Squad:
     def __init__(self, squad_name: str, home_town: str, formed: int, secret_base: str, active: bool, members: List['Member']):
         self.squad_name = squad_name
@@ -95,6 +50,12 @@ class Squad:
         self.secret_base = secret_base
         self.active = active
         self.members = members
+
+    def __repr__(self):
+        return f"Squad(squad_name={self.squad_name!r}, home_town={self.home_town!r}, formed={self.formed!r}, secret_base={self.secret_base!r}, active={self.active!r}, members={self.members!r})"
+
+squad = Squad(squad_name='Super hero squad', home_town='Metro City', formed=2016, secret_base='Super tower', active=True, members=[Member(name='Molecule Man', age=29, secret_identity='Dan Jukes', powers=['Radiation resistance', 'Turning tiny', 'Radiation blast']), Member(name='Madame Uppercut', age=39, secret_identity='Jane Wilson', powers=['Million tonne punch', 'Damage resistance', 'Superhuman reflexes']), Member(name='Eternal Flame', age=1000000, secret_identity='Unknown', powers=['Immortality', 'Heat Immunity', 'Inferno', 'Teleportation', 'Interdimensional travel'])])
+print(squad)
 ```
 
 [To Java]
@@ -232,10 +193,16 @@ class Duration:
         self.end = end
         self.days_of_use = days_of_use
 
+    def __repr__(self):
+        return f"Duration(type_field={self.type_field!r}, start={self.start!r}, end={self.end!r}, days_of_use={self.days_of_use!r})"
+
 class Availability:
     def __init__(self, available: str, duration: 'Duration'):
         self.available = available
         self.duration = duration
+
+    def __repr__(self):
+        return f"Availability(available={self.available!r}, duration={self.duration!r})"
 
 class Enrollment:
     def __init__(self, type_field: str, start: str, end: str, access_code: str):
@@ -244,10 +211,16 @@ class Enrollment:
         self.end = end
         self.access_code = access_code
 
+    def __repr__(self):
+        return f"Enrollment(type_field={self.type_field!r}, start={self.start!r}, end={self.end!r}, access_code={self.access_code!r})"
+
 class Locale:
     def __init__(self, id_field: str, force: bool):
         self.id_field = id_field
         self.force = force
+
+    def __repr__(self):
+        return f"Locale(id_field={self.id_field!r}, force={self.force!r})"
 
 class Course:
     def __init__(self, id_field: str, uuid: str, external_id: str, data_source_id: str, course_id: str, name: str, description: str, created: str, modified: str, organization: bool, ultra_status: str, allow_guests: bool, closed_complete: bool, term_id: str, availability: 'Availability', enrollment: 'Enrollment', locale: 'Locale', has_children: bool, parent_id: str, external_access_url: str, guest_access_url: str):
@@ -272,6 +245,12 @@ class Course:
         self.parent_id = parent_id
         self.external_access_url = external_access_url
         self.guest_access_url = guest_access_url
+
+    def __repr__(self):
+        return f"Course(id_field={self.id_field!r}, uuid={self.uuid!r}, external_id={self.external_id!r}, data_source_id={self.data_source_id!r}, course_id={self.course_id!r}, name={self.name!r}, description={self.description!r}, created={self.created!r}, modified={self.modified!r}, organization={self.organization!r}, ultra_status={self.ultra_status!r}, allow_guests={self.allow_guests!r}, closed_complete={self.closed_complete!r}, term_id={self.term_id!r}, availability={self.availability!r}, enrollment={self.enrollment!r}, locale={self.locale!r}, has_children={self.has_children!r}, parent_id={self.parent_id!r}, external_access_url={self.external_access_url!r}, guest_access_url={self.guest_access_url!r})"
+
+course = Course(id_field='string', uuid='string', external_id='string', data_source_id='string', course_id='string', name='string', description='string', created='2020-08-30T23:47:15.769Z', modified='2020-08-30T23:47:15.769Z', organization=True, ultra_status='Undecided', allow_guests=True, closed_complete=True, term_id='string', availability=Availability(available='Yes', duration=Duration(type_field='Continuous', start='2020-08-30T23:47:15.769Z', end='2020-08-30T23:47:15.769Z', days_of_use=0)), enrollment=Enrollment(type_field='InstructorLed', start='2020-08-30T23:47:15.769Z', end='2020-08-30T23:47:15.769Z', access_code='string'), locale=Locale(id_field='string', force=True), has_children=True, parent_id='string', external_access_url='string', guest_access_url='string')
+print(course)
 ```
 
 [To Java]

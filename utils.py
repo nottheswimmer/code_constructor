@@ -61,18 +61,18 @@ class_signatures_to_name = dict()
 
 def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: str) -> field_types.Type:
     if isinstance(primitive, str):
-        return field_types.String(length=len(primitive))
+        return field_types.String(value=primitive, length=len(primitive))
     if isinstance(primitive, bool):
-        return field_types.Boolean()
+        return field_types.Boolean(value=primitive)
     if isinstance(primitive, int):
-        return field_types.Integer()
+        return field_types.Integer(value=primitive)
     if isinstance(primitive, list):
         if len(primitive) == 0:
             raise NotImplemented("Empty lists are not supported.")
         primitive_type = None
         for subprimative in primitive:
             subprimative_type = primitive_to_type(subprimative, field_name=field_name)
-            new_primitive_type = field_types.Array(item_type=subprimative_type, length=len(primitive))
+            new_primitive_type = field_types.Array(value=primitive, item_type=subprimative_type, length=len(primitive))
             if primitive_type is None:
                 primitive_type = new_primitive_type
             else:
@@ -98,6 +98,6 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
             else:
                 primitive_class.name = create_unique_classname()
             class_signatures_to_name[java_code] = primitive_class.name
-        return field_types.Object(primitive_class)
+        return field_types.Object(value=primitive, object_class=primitive_class)
 
     raise ValueError(f"{primitive!r} (type={type(primitive)}) is not supported!")

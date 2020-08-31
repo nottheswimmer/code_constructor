@@ -57,6 +57,9 @@ class MetaClass:
 
     @property
     def python_name(self) -> str:
+        import keyword
+        if self.name in PYTHON_BUILTIN_NAMES or keyword.iskeyword(self.name):
+            return self.name + "Object"
         return self.name
 
     @property
@@ -112,6 +115,8 @@ class MetaClass:
                 lines.append('')
 
         lines.append(f"class {self.python_name}:")
+
+        # Constructor
         constructor = indent(1) + "def __init__(self, "
         constructor_body_lines = []
         for field, t in self.python_fields.items():
@@ -122,7 +127,33 @@ class MetaClass:
         lines.append(constructor)
         lines += constructor_body_lines
 
+        # Repr method
+        lines.append('')
+        lines.append(indent(1) + "def __repr__(self):")
+        string_body = indent(2) + f"return f\"{self.python_name}("
+        for field, t in self.python_fields.items():
+            string_body += f"{field}={{self.{field}!r}}, "
+        string_body = string_body[:-2] + ")\""
+        lines.append(string_body)
+
         return '\n'.join(lines)
+
+    def to_python_construction(self) -> str:
+        line = f"{self.python_name}("
+        for field, t in self.python_fields.items():
+            line += f"{field}={t.to_python_value}, "
+        line = line.rstrip(", ") + ")"
+        return line
+
+    def to_python_example(self) -> str:
+        import keyword
+
+        test_var_name = camel_to_lower_snake(self.name)
+        if test_var_name in PYTHON_BUILTIN_NAMES or keyword.iskeyword(test_var_name):
+            test_var_name += "_object"
+        lines = [f"{test_var_name} = {self.to_python_construction()}", f"print({test_var_name})"]
+        return '\n'.join(lines)
+
 
     def to_java(self) -> str:
         lines = []
@@ -200,6 +231,8 @@ class MetaClass:
         print("[To Python]")
         print('```python')
         print(self.to_python())
+        print()
+        print(self.to_python_example())
         print('```')
         print()
 
@@ -224,10 +257,10 @@ class MetaClass:
 
 def main():
     person = MetaClass("person",
-                       {"name": String(),
-                        "age": Integer(),
-                        "happy": Boolean(),
-                        "favorite_colors": Array(String())})
+                       {"name": String("Hello"),
+                        "age": Integer(14),
+                        "happy": Boolean(True),
+                        "favorite_colors": Array(value=["Blue"], item_type=String(""))})
     # person._dump()
 
     car_owner = MetaClass.from_json("CarOwner", """\
@@ -286,7 +319,7 @@ def main():
   ]
 }
 """)
-    squad._dump()
+    # squad._dump()
 
     course = MetaClass.from_json("course", """\
 {
@@ -329,7 +362,7 @@ def main():
   "guestAccessUrl": "string"
 }
 """)
-    # course._dump()
+    course._dump()
 
 if __name__ == '__main__':
     main()
