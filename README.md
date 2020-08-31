@@ -25,7 +25,158 @@ Takes a JSON payload and converts it to code that defines classes or structures 
 - For arrays and strings in languages that require a fixed array size as part of the struct (e.g. C),
   the length given in the payload is used for strings, or the maximum length for arrays.
 
-## Example
+## Examples
+
+### List of Course results from the Blackboard API
+
+Output:
+
+### Squad (example taken from the Mozilla Docs)
+
+```python
+    squad = MetaClass.from_json("Squad", """\
+{
+  "squadName": "Super hero squad",
+  "homeTown": "Metro City",
+  "formed": 2016,
+  "secretBase": "Super tower",
+  "active": true,
+  "members": [
+    {
+      "name": "Molecule Man",
+      "age": 29,
+      "secretIdentity": "Dan Jukes",
+      "powers": [
+        "Radiation resistance",
+        "Turning tiny",
+        "Radiation blast"
+      ]
+    },
+    {
+      "name": "Madame Uppercut",
+      "age": 39,
+      "secretIdentity": "Jane Wilson",
+      "powers": [
+        "Million tonne punch",
+        "Damage resistance",
+        "Superhuman reflexes"
+      ]
+    },
+    {
+      "name": "Eternal Flame",
+      "age": 1000000,
+      "secretIdentity": "Unknown",
+      "powers": [
+        "Immortality",
+        "Heat Immunity",
+        "Inferno",
+        "Teleportation",
+        "Interdimensional travel"
+      ]
+    }
+  ]
+}
+""")
+    squad._dump()
+```
+
+Output:
+
+[To Python]
+```python
+class Member:
+    def __init__(self, name: str, age: int, secret_identity: str, powers: List[str]):
+        self.name = name
+        self.age = age
+        self.secret_identity = secret_identity
+        self.powers = powers
+
+class Squad:
+    def __init__(self, squad_name: str, home_town: str, formed: int, secret_base: str, active: bool, members: List['Member']):
+        self.squad_name = squad_name
+        self.home_town = home_town
+        self.formed = formed
+        self.secret_base = secret_base
+        self.active = active
+        self.members = members
+```
+
+[To Java]
+```java
+class Squad {
+    public String squadName;
+    public String homeTown;
+    public int formed;
+    public String secretBase;
+    public boolean active;
+    public Member[] members;
+
+    public Squad(String squadName, String homeTown, int formed, String secretBase, boolean active, Member[] members) {
+        this.squadName = squadName;
+        this.homeTown = homeTown;
+        this.formed = formed;
+        this.secretBase = secretBase;
+        this.active = active;
+        this.members = members;
+    }
+}
+
+class Member {
+    public String name;
+    public int age;
+    public String secretIdentity;
+    public String[] powers;
+
+    public Member(String name, int age, String secretIdentity, String[] powers) {
+        this.name = name;
+        this.age = age;
+        this.secretIdentity = secretIdentity;
+        this.powers = powers;
+    }
+}
+```
+
+[To Go]
+```go
+type Member struct {
+    Name string
+    Age int
+    SecretIdentity string
+    Powers []string
+}
+
+type Squad struct {
+    SquadName string
+    HomeTown string
+    Formed int
+    SecretBase string
+    Active bool
+    Members []Member
+}
+```
+
+[To C]
+```c
+#include <stdbool.h>
+
+struct Member {
+    char name[12];
+    int age;
+    char secret_identity[9];
+    char powers[20][3];
+};
+
+struct Squad {
+    char squad_name[16];
+    char home_town[10];
+    int formed;
+    char secret_base[11];
+    bool active;
+    Member members[3];
+};
+```
+
+### Course from the Blackboard API
 
 Input:
 
