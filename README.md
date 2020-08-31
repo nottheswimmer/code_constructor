@@ -27,10 +27,6 @@ Takes a JSON payload and converts it to code that defines classes or structures 
 
 ## Examples
 
-### List of Course results from the Blackboard API
-
-Output:
-
 ### Squad (example taken from the Mozilla Docs)
 
 ```python
