@@ -5,6 +5,34 @@ from field_types import Type, String, Integer, Boolean, Array
 from utils import any_to_upper_camel, any_to_lower_camel, camel_to_lower_snake, indent, primitive_to_type
 
 
+# TODO: Find a workaround that will let me use dir(__builtin__) or similar
+#  __builtin__ does not work for recursively defined classes at the moment
+PYTHON_BUILTIN_NAMES = ['ArithmeticError', 'AssertionError', 'AttributeError', 'BaseException', 'BlockingIOError',
+                        'BrokenPipeError', 'BufferError', 'BytesWarning', 'ChildProcessError', 'ConnectionAbortedError',
+                        'ConnectionError', 'ConnectionRefusedError', 'ConnectionResetError', 'DeprecationWarning',
+                        'EOFError', 'Ellipsis', 'EnvironmentError', 'Exception', 'False', 'FileExistsError',
+                        'FileNotFoundError', 'FloatingPointError', 'FutureWarning', 'GeneratorExit', 'IOError',
+                        'ImportError', 'ImportWarning', 'IndentationError', 'IndexError', 'InterruptedError',
+                        'IsADirectoryError', 'KeyError', 'KeyboardInterrupt', 'LookupError', 'MemoryError',
+                        'ModuleNotFoundError', 'NameError', 'None', 'NotADirectoryError', 'NotImplemented',
+                        'NotImplementedError', 'OSError', 'OverflowError', 'PendingDeprecationWarning',
+                        'PermissionError', 'ProcessLookupError', 'RecursionError', 'ReferenceError', 'ResourceWarning',
+                        'RuntimeError', 'RuntimeWarning', 'StopAsyncIteration', 'StopIteration', 'SyntaxError',
+                        'SyntaxWarning', 'SystemError', 'SystemExit', 'TabError', 'TimeoutError', 'True', 'TypeError',
+                        'UnboundLocalError', 'UnicodeDecodeError', 'UnicodeEncodeError', 'UnicodeError',
+                        'UnicodeTranslateError', 'UnicodeWarning', 'UserWarning', 'ValueError', 'Warning',
+                        'WindowsError', 'ZeroDivisionError', '__build_class__', '__debug__', '__doc__', '__import__',
+                        '__loader__', '__name__', '__package__', '__spec__', 'abs', 'all', 'any', 'ascii', 'bin',
+                        'bool', 'breakpoint', 'bytearray', 'bytes', 'callable', 'chr', 'classmethod', 'compile',
+                        'complex', 'copyright', 'credits', 'delattr', 'dict', 'dir', 'divmod', 'enumerate', 'eval',
+                        'exec', 'exit', 'filter', 'float', 'format', 'frozenset', 'getattr', 'globals', 'hasattr',
+                        'hash', 'help', 'hex', 'id', 'input', 'int', 'isinstance', 'issubclass', 'iter', 'len',
+                        'license', 'list', 'locals', 'map', 'max', 'memoryview', 'min', 'next', 'object', 'oct', 'open',
+                        'ord', 'pow', 'print', 'property', 'quit', 'range', 'repr', 'reversed', 'round', 'set',
+                        'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super', 'tuple', 'type', 'vars',
+                        'zip']
+
+
 class MetaClass:
     def __init__(self, name: str, fields: Dict[str, Type]):
         # Normalize class name as UpperCamel
@@ -48,7 +76,7 @@ class MetaClass:
         import keyword
 
         def add_field_to_reserved_words(field_name: str) -> str:
-            if field_name in dir(__builtins__):
+            if field_name in PYTHON_BUILTIN_NAMES:
                 return field_name + "_field"
             if keyword.iskeyword(field_name):
                 return field_name + "_field"

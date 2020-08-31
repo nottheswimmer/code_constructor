@@ -79,8 +79,8 @@ Output:
 [To Python]
 ```python
 class Duration:
-    def __init__(self, type: str, start: str, end: str, days_of_use: int):
-        self.type = type
+    def __init__(self, type_field: str, start: str, end: str, days_of_use: int):
+        self.type_field = type_field
         self.start = start
         self.end = end
         self.days_of_use = days_of_use
@@ -91,15 +91,15 @@ class Availability:
         self.duration = duration
 
 class Enrollment:
-    def __init__(self, type: str, start: str, end: str, access_code: str):
-        self.type = type
+    def __init__(self, type_field: str, start: str, end: str, access_code: str):
+        self.type_field = type_field
         self.start = start
         self.end = end
         self.access_code = access_code
 
 class Locale:
-    def __init__(self, id: str, force: bool):
-        self.id = id
+    def __init__(self, id_field: str, force: bool):
+        self.id_field = id_field
         self.force = force
 
 class Course:
