@@ -319,7 +319,7 @@ def main():
   ]
 }
 """)
-    # squad._dump()
+    squad._dump()
 
     course = MetaClass.from_json("course", """\
 {
@@ -362,7 +362,7 @@ def main():
   "guestAccessUrl": "string"
 }
 """)
-    course._dump()
+    # course._dump()
 
 if __name__ == '__main__':
     main()
