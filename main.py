@@ -198,19 +198,27 @@ class MetaClass:
 
     def _dump(self):
         print("[To Python]")
+        print('```python')
         print(self.to_python())
+        print('```')
         print()
 
         print("[To Java]")
+        print('```java')
         print(self.to_java())
+        print('```')
         print()
 
         print("[To Go]")
+        print('```go')
         print(self.to_go())
+        print('```')
         print()
 
         print("[To C]")
+        print('```c')
         print(self.to_c())
+        print('```')
         print()
 
 
