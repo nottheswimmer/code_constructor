@@ -123,14 +123,14 @@ class Array(Type):
 
     @property
     def to_python_value(self) -> str:
-        from copy import deepcopy
-        item_type_copy = deepcopy(self.item_type)
+        original_value = self.item_type.value
         value = "["
         for item in self.value:
-            item_type_copy.value = item
-            value += item_type_copy.to_python_value + ", "
+            self.item_type.value = item
+            value += self.item_type.to_python_value + ", "
         value = value.rstrip(", ")
         value += "]"
+        self.item_type.value = original_value
         return value
 
     @property
