@@ -65,8 +65,12 @@
                 <div class="col-9">
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="tabone" role="tabpanel">
-                            <pre><code class="python">{{ metaclass.to_python() }}</code></pre>
-                            <pre><code class="python">{{ metaclass.to_python_example() }}</code></pre>
+<pre><code class="python">
+{{- metaclass.to_python() }}
+
+
+{{ metaclass.to_python_example() -}}
+</code></pre>
                         </div>
                         <div class="tab-pane fade" id="tabtwo" role="tabpanel">
                             <pre><code class="java">{{ metaclass.to_java() }}</code></pre>
