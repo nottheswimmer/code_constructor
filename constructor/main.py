@@ -6,7 +6,6 @@ from constructor.utils import any_to_upper_camel, any_to_lower_camel, camel_to_l
 
 from inflection import pluralize, singularize
 
-
 # TODO: Find a workaround that will let me use dir(__builtin__) or similar
 #  __builtin__ does not work for recursively defined classes at the moment
 PYTHON_BUILTIN_NAMES = ['ArithmeticError', 'AssertionError', 'AttributeError', 'BaseException', 'BlockingIOError',
@@ -35,6 +34,7 @@ PYTHON_BUILTIN_NAMES = ['ArithmeticError', 'AssertionError', 'AttributeError', '
                         'zip']
 
 PRINTED_SIGNATURES: Dict[str, Set[str]] = {}
+
 
 class MetaClass:
     def __init__(self, name: str, fields: Dict[str, Type]):
@@ -217,7 +217,6 @@ class MetaClass:
         lines = [f"{test_var_name} = {self.to_python_construction()}", f"print({test_var_name})"]
         return '\n'.join(lines)
 
-
     def to_java(self) -> str:
         top_level = 'java' not in PRINTED_SIGNATURES
         if top_level:
@@ -229,18 +228,19 @@ class MetaClass:
 
         lines = []
 
-        lines.append(f"class {self.java_name} {{")  # TODO: Scope
+        lines.append(f"{'public ' if top_level else ''}class {self.java_name} {{")  # TODO: Scope
         field_lines = []
         for field, t in self.java_fields.items():
-            # TODO: We probably don't actually want public fields. Java prefers getters and setters.
-            field_lines.append(indent(1) + f"public {t.to_java} {field};")  # TODO: Scope
+            field_lines.append(indent(1) + f"private {t.to_java} {field};")
         lines += field_lines
         lines.append('')
 
         # No constructor is needed if we have no fields
+        # Also no getters or setters would be needed
         field_items = self.java_fields.items()
         if field_items:
-            constructor = indent(1) + f"public {self.java_name}("  # TODO: Scope
+            # Build constructor
+            constructor = indent(1) + f"public {self.java_name}("
             constructor_lines = []
             for field, t in field_items:
                 constructor += f"{t.to_java} {field}, "
@@ -253,6 +253,25 @@ class MetaClass:
             # Add closing curly
             lines.append(indent(1) + "}")
             lines.append('')
+
+            # Add getters and setters
+            for field, t in field_items:
+                getter_lines = [
+                    indent(1) + f"public {t.to_java} get{field[0].upper()}{field[1:]}() {{",
+                    indent(2) + f'return this.{field};',
+                    indent(1) + '}',
+                    ''
+                ]
+                lines += getter_lines
+
+                setter_lines = [
+                    indent(1) + f"public void set{field[0].upper()}{field[1:]}({t.to_java} {field}) {{",
+                    indent(2) + f'this.{field} = {field};',
+                    indent(1) + '}',
+                    ''
+                ]
+
+                lines += setter_lines
 
         # Add toString method
         lines.append(indent(1) + "public String toString() {")
@@ -479,6 +498,7 @@ def main():
 }
 """)
     # course._dump()
+
 
 if __name__ == '__main__':
     main()
