@@ -220,7 +220,7 @@ class MetaClass:
                 string = field_type.object_class.to_java()
                 if string:
                     lines.append('')
-                    lines.append(field_type.object_class.to_java())
+                    lines.append(string)
 
         if top_level:
             del PRINTED_SIGNATURES['java']
@@ -241,7 +241,7 @@ class MetaClass:
             for field_type in t.embedded_objects:
                 string = field_type.object_class.to_go()
                 if string:
-                    lines.append(field_type.object_class.to_go())
+                    lines.append(string)
                     lines.append('')
 
         lines.append(f"type {self.go_name} struct {{")
