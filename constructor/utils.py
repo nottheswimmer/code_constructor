@@ -51,17 +51,6 @@ def camel_to_lower_snake(word: str) -> str:
 def indent(i: int) -> str:
     return ' ' * i * 4
 
-
-def create_unique_classname():
-    random_adjective = random.choice(ADJECTIVES)
-    random_noun = random.choice(NOUNS)
-    name = any_to_upper_camel(random_adjective + "_" + random_noun).strip()
-    if name not in UNIQUE_CLASSNAMES:
-        UNIQUE_CLASSNAMES.add(name)
-        return name
-    # If the name came up with has been used, try again.
-    return create_unique_classname()
-
 def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: str) -> field_types.Type:
     # Strings
     if isinstance(primitive, str):
@@ -111,7 +100,11 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
             if field_name not in UNIQUE_CLASSNAMES:
                 UNIQUE_CLASSNAMES.add(field_name)
             else:
-                primitive_class.name = create_unique_classname()
+                i = 1
+                while f"{field_name}{i}" in UNIQUE_CLASSNAMES:
+                    i += 1
+                primitive_class.name = f"{field_name}{i}"
+                UNIQUE_CLASSNAMES.add(f"{field_name}{i}")
             CLASS_SIGNATURES_TO_NAME[signature] = primitive_class.name
         return field_types.Object(value=primitive, object_class=primitive_class)
 
