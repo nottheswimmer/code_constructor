@@ -238,10 +238,11 @@ class MetaClass:
         lines.append('')
 
         # No constructor is needed if we have no fields
-        if self.java_fields:
+        field_items = self.java_fields.items()
+        if field_items:
             constructor = indent(1) + f"public {self.java_name}("  # TODO: Scope
             constructor_lines = []
-            for field, t in self.java_fields.items():
+            for field, t in field_items:
                 constructor += f"{t.to_java} {field}, "
                 constructor_lines.append(indent(2) + f"this.{field} = {field};")
             # Remove trailing ", " and close signature / open body
@@ -251,6 +252,20 @@ class MetaClass:
 
             # Add closing curly
             lines.append(indent(1) + "}")
+            lines.append('')
+
+        # Add toString method
+        lines.append(indent(1) + "public String toString() {")
+        string_body = indent(2) + f'return "{self.java_name}('
+        if field_items:
+            for field, t in field_items:
+                string_body += f'{field}=" + this.{field} + ", '
+            string_body = string_body.rstrip(', ')
+        string_body += ')";'
+        lines.append(string_body)
+        # Add closing curly
+        lines.append(indent(1) + "}")
+        lines.append('')
 
         # Add final closing curly
         lines.append("}")
