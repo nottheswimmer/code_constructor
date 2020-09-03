@@ -88,6 +88,10 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
             else:
                 # TODO: Something less arbitrary than using Java to check
                 if new_primitive_type.to_java != primitive_type.to_java:
+                    print("MISMATCH")
+                    print(new_primitive_type.to_java)
+                    print('=========================')
+                    print(primitive_type.to_java)
                     raise NotImplementedError(f"Arrays cannot contain different types ({new_primitive_type.to_java} vs "
                                      f"{primitive_type.to_java})")
                 # We want the maximum length seen for the array size
@@ -100,16 +104,15 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
 
         field_name = singularize(field_name)
         primitive_class = MetaClass.from_dict(field_name, primitive)
-        # TODO: Something less arbitrary than using Java to check
-        java_code = primitive_class.to_java()
-        if java_code in CLASS_SIGNATURES_TO_NAME:
-            primitive_class.name = CLASS_SIGNATURES_TO_NAME[java_code]
+        signature = primitive_class.name_and_field_signature
+        if signature in CLASS_SIGNATURES_TO_NAME:
+            primitive_class.name = CLASS_SIGNATURES_TO_NAME[signature]
         else:
             if field_name not in UNIQUE_CLASSNAMES:
                 UNIQUE_CLASSNAMES.add(field_name)
             else:
                 primitive_class.name = create_unique_classname()
-            CLASS_SIGNATURES_TO_NAME[java_code] = primitive_class.name
+            CLASS_SIGNATURES_TO_NAME[signature] = primitive_class.name
         return field_types.Object(value=primitive, object_class=primitive_class)
 
     # Other (None/null not yet supported)
