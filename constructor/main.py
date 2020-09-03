@@ -57,10 +57,10 @@ class MetaClass:
         data = json.loads(data)
         # TODO: More useful support for lists
         # TODO: Bubble up a warning that we ignored everything except the first nonlist item
-        while isinstance(data, list):
+        if isinstance(data, list):
             if len(data) == 0:
-                raise NotImplementedError("What is this? Like, nested lists with nothing in them? Dude...")
-            data = data[0]
+                raise NotImplementedError("Top-level array cannot be an empty list")
+            return cls.from_dict(name, {"items": data})
         return cls.from_dict(name, data)
 
     @property
