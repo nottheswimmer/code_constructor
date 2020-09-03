@@ -131,6 +131,13 @@ class MetaClass:
         return i_standard, i_third_party, i_local
 
     @property
+    def java_imports(self) -> List[str]:
+        imports = set()
+        for field_type in self.fields.values():
+            imports.update(field_type.java_imports)
+        return sorted(imports)
+
+    @property
     def name_and_field_signature(self) -> str:
         """
         Return an arbitrary string unique to the name and fields of this class
@@ -217,6 +224,19 @@ class MetaClass:
         lines = [f"{test_var_name} = {self.to_python_construction()}", f"print({test_var_name})"]
         return '\n'.join(lines)
 
+    def to_java_construction(self) -> str:
+        line = f"new {self.java_name}("
+        for field, t in self.java_fields.items():
+            line += f"{t.to_java_value}, "
+        line = line.rstrip(", ") + ")"
+        return line
+
+    def to_java_example(self) -> str:
+        # TODO: Avoid Java keywords and shadowing Java builtins
+        test_var_name = any_to_lower_camel(self.name)
+        lines = [f"{self.java_name} {test_var_name} = {self.to_java_construction()};", f"System.out.println({test_var_name});"]
+        return '\n'.join(lines)
+
     def to_java(self) -> str:
         top_level = 'java' not in PRINTED_SIGNATURES
         if top_level:
@@ -227,6 +247,12 @@ class MetaClass:
             PRINTED_SIGNATURES['java'].add(self.name_and_field_signature)
 
         lines = []
+        if top_level:
+            for java_import in self.java_imports:
+                lines.append(f"import {java_import};")
+            # Add another line if there were imports needed
+            if lines:
+                lines.append('')
 
         lines.append(f"{'public ' if top_level else ''}class {self.java_name} {{")  # TODO: Scope
         field_lines = []
@@ -278,13 +304,24 @@ class MetaClass:
         string_body = indent(2) + f'return "{self.java_name}('
         if field_items:
             for field, t in field_items:
-                string_body += f'{field}=" + this.{field} + ", '
+                if isinstance(t, Array):
+                    string_body += f'{field}=" + Arrays.toString(this.{field}) + ", '
+                else:
+                    string_body += f'{field}=" + this.{field} + ", '
             string_body = string_body.rstrip(', ')
         string_body += ')";'
         lines.append(string_body)
         # Add closing curly
         lines.append(indent(1) + "}")
         lines.append('')
+
+        # For java, let's go ahead and add a main method with an example in the top-level course
+        if top_level:
+            lines.append(indent(1) + "public static void main(String[] args) {")
+            for line in self.to_java_example().splitlines():
+                lines.append(indent(2) + line)
+            lines.append(indent(1) + "}")
+            lines.append('')
 
         # Add final closing curly
         lines.append("}")

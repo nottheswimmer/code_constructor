@@ -47,6 +47,11 @@ class Type(ABC):
 
     @property
     @abstractmethod
+    def to_java_value(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
     def to_java(self) -> str:
         pass
 
@@ -76,6 +81,10 @@ class Type(ABC):
         return ({}, {}, {})
 
     @property
+    def java_imports(self) -> Set[str]:
+        return set()
+
+    @property
     def embedded_objects(self) -> List['Object']:
         return []
 
@@ -95,6 +104,13 @@ class String(Type):
         return repr(self.value)
 
     @property
+    def to_java_value(self) -> str:
+        import json
+
+        # In Java, strings cannot be double quoted
+        return json.dumps(self.value).lstrip('[').rstrip(']')
+
+    @property
     def c_field_suffix(self) -> str:
         return f"[{self.length}]"
 
@@ -109,6 +125,10 @@ class Integer(Type):
     def to_python_value(self) -> str:
         return repr(self.value)
 
+    @property
+    def to_java_value(self) -> str:
+        return repr(self.value)
+
 
 class Double(Type):
     to_python = 'float'
@@ -118,6 +138,10 @@ class Double(Type):
 
     @property
     def to_python_value(self) -> str:
+        return repr(self.value)
+
+    @property
+    def to_java_value(self) -> str:
         return repr(self.value)
 
 
@@ -131,6 +155,11 @@ class Boolean(Type):
     @property
     def to_python_value(self) -> str:
         return repr(self.value)
+
+    @property
+    def to_java_value(self) -> str:
+        # In Java, booleans are false rather than False, or true rather than True
+        return repr(self.value).lower()
 
 
 class Array(Type):
@@ -152,8 +181,25 @@ class Array(Type):
         return value
 
     @property
+    def to_java_value(self) -> str:
+        # Array literal
+        original_value = self.item_type.value
+        value = f"new {self.item_type.to_java}[]{{"
+        for item in self.value:
+            self.item_type.value = item
+            value += self.item_type.to_java_value + ", "
+        value = value.rstrip(", ")
+        value += "}"
+        self.item_type.value = original_value
+        return value
+
+    @property
     def python_imports(self) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Dict[str, Set[str]]]:
         return ({"typing": {"List"}}, {}, {})
+
+    @property
+    def java_imports(self) -> Set[str]:
+        return {"java.util.Arrays"}
 
     @property
     def embedded_objects(self) -> List['Object']:
@@ -202,6 +248,14 @@ class Object(Type):
         return object_class.to_python_construction()
 
     @property
+    def to_java_value(self) -> str:
+        from constructor.main import MetaClass
+
+        # Not using self.object_class so that overriding the value is supported...
+        object_class = MetaClass.from_dict(name=self.object_class.name, data=self.value)
+        return object_class.to_java_construction()
+
+    @property
     def to_python(self) -> str:
         return f"'{self.object_class.python_name}'"
 
@@ -228,3 +282,7 @@ class Object(Type):
     @property
     def python_imports(self) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Dict[str, Set[str]]]:
         return self.object_class.python_imports
+
+    @property
+    def java_imports(self) -> Set[str]:
+        return set(self.object_class.java_imports)
