@@ -15,6 +15,7 @@ def cleanup():
     CLASS_SIGNATURES_TO_NAME.clear()
     PRINTED_SIGNATURES.clear()
 
+
 def any_to_upper_camel(name: str) -> str:
     if not name:
         return 'Name'
@@ -49,6 +50,7 @@ def camel_to_lower_snake(word: str) -> str:
 def indent(i: int) -> str:
     return ' ' * i * 4
 
+
 def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: str) -> field_types.Type:
     # Strings
     if isinstance(primitive, str):
@@ -75,12 +77,8 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
             else:
                 # TODO: Something less arbitrary than using Java to check
                 if new_primitive_type.to_java != primitive_type.to_java:
-                    print("MISMATCH")
-                    print(new_primitive_type.to_java)
-                    print('=========================')
-                    print(primitive_type.to_java)
-                    raise NotImplementedError(f"Arrays cannot contain different types ({new_primitive_type.to_java} vs "
-                                     f"{primitive_type.to_java})")
+                    raise NotImplementedError(f"Arrays cannot contain different types ("
+                                              f"{primitive_type.to_java} vs {new_primitive_type.to_java})")
                 # We want the maximum length seen for the array size
                 primitive_type.length = max(primitive_type.length, len(primitive))
         return primitive_type
@@ -93,8 +91,10 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
         primitive_class = MetaClass.from_dict(field_name, primitive)
         signature = primitive_class.name_and_field_signature
         if signature in CLASS_SIGNATURES_TO_NAME:
+            # print("previously seen:", signature)
             primitive_class.name = CLASS_SIGNATURES_TO_NAME[signature]
         else:
+            # print("brand new:", signature)
             if field_name not in UNIQUE_CLASSNAMES:
                 UNIQUE_CLASSNAMES.add(field_name)
             else:
