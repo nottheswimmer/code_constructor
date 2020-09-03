@@ -3,7 +3,7 @@ from typing import Union
 
 from inflection import singularize
 
-import field_types
+from constructor import field_types
 
 
 def any_to_upper_camel(name: str) -> str:
@@ -84,7 +84,7 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
                 primitive_type.length = max(primitive_type.length, len(primitive))
         return primitive_type
     if isinstance(primitive, dict):
-        from main import MetaClass
+        from constructor.main import MetaClass
 
         field_name = singularize(field_name)
         primitive_class = MetaClass.from_dict(field_name, primitive)

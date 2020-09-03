@@ -1,8 +1,8 @@
 import json
 from typing import Dict, List, Union
 
-from field_types import Type, String, Integer, Boolean, Array
-from utils import any_to_upper_camel, any_to_lower_camel, camel_to_lower_snake, indent, primitive_to_type
+from constructor.field_types import Type, String, Integer, Boolean, Array
+from constructor.utils import any_to_upper_camel, any_to_lower_camel, camel_to_lower_snake, indent, primitive_to_type
 
 
 # TODO: Find a workaround that will let me use dir(__builtin__) or similar

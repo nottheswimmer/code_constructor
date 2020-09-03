@@ -28,7 +28,7 @@ from abc import ABC, abstractmethod
 from typing import Set, TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from main import MetaClass
+    from constructor.main import MetaClass
 
 
 class Type(ABC):
@@ -173,7 +173,7 @@ class Object(Type):
 
     @property
     def to_python_value(self) -> str:
-        from main import MetaClass
+        from constructor.main import MetaClass
 
         # Not using self.object_class so that overriding the value is supported...
         object_class = MetaClass.from_dict(name=self.object_class.name, data=self.value)
