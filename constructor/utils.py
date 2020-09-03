@@ -64,6 +64,10 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
     if isinstance(primitive, int):
         return field_types.Integer(value=primitive)
 
+    # Floating-point types
+    if isinstance(primitive, float):
+        return field_types.Double(value=primitive)
+
     # Arrays
     if isinstance(primitive, list):
         if len(primitive) == 0:

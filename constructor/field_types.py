@@ -110,6 +110,17 @@ class Integer(Type):
         return repr(self.value)
 
 
+class Double(Type):
+    to_python = 'float'
+    to_java = 'double'
+    to_go = 'float64'
+    to_c = 'double'
+
+    @property
+    def to_python_value(self) -> str:
+        return repr(self.value)
+
+
 class Boolean(Type):
     to_python = 'bool'
     to_java = 'boolean'
