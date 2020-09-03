@@ -55,8 +55,12 @@ class MetaClass:
     @classmethod
     def from_json(cls, name: str, data: str):
         data = json.loads(data)
-        if isinstance(data, list):
-            raise NotImplementedError("The top-level object cannot be an array")
+        # TODO: More useful support for lists
+        # TODO: Bubble up a warning that we ignored everything except the first nonlist item
+        while isinstance(data, list):
+            if len(data) == 0:
+                raise NotImplementedError("What is this? Like, nested lists with nothing in them? Dude...")
+            data = data[0]
         return cls.from_dict(name, data)
 
     @property
