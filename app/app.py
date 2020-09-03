@@ -18,8 +18,8 @@ def index():
             metaclass = MetaClass.from_json(classname, jsondata)
         except JSONDecodeError as e:
             errors['JSONDecodeError'] = e
-        except ValueError as e:
-            errors['ValueError'] = e
+        except NotImplementedError as e:
+            errors['NotImplementedError'] = e
     return render_template('index.html',
                            classname=classname,
                            jsondata=jsondata,

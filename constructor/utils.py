@@ -68,7 +68,7 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
         return field_types.Integer(value=primitive)
     if isinstance(primitive, list):
         if len(primitive) == 0:
-            raise NotImplemented("Empty lists are not supported.")
+            raise NotImplementedError("Empty lists are not supported.")
         primitive_type = None
         for subprimative in primitive:
             subprimative_type = primitive_to_type(subprimative, field_name=field_name)
@@ -100,4 +100,4 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
             class_signatures_to_name[java_code] = primitive_class.name
         return field_types.Object(value=primitive, object_class=primitive_class)
 
-    raise ValueError(f"{primitive!r} (type={type(primitive)}) is not supported!")
+    raise NotImplementedError(f"{primitive!r} (type={type(primitive)}) is not supported!")

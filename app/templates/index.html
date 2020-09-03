@@ -28,9 +28,9 @@
                                 JSONDecodeError: {{ errors['JSONDecodeError'] }}
                             </div>
                         {% endif %}
-                        {% if errors['ValueError'] %}
+                        {% if errors['NotImplementedError'] %}
                             <div class="alert alert-danger" role="alert">
-                                ValueError: {{ errors['ValueError'] }}
+                                NotImplementedError: {{ errors['NotImplementedError'] }}
                             </div>
                         {% endif %}
                         <textarea id="jsondata" name="jsondata" class="form-control" rows="6"
