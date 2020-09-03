@@ -54,7 +54,10 @@ class MetaClass:
 
     @classmethod
     def from_json(cls, name: str, data: str):
-        return cls.from_dict(name, json.loads(data))
+        data = json.loads(data)
+        if isinstance(data, list):
+            raise NotImplementedError("The top-level object cannot be an array")
+        return cls.from_dict(name, data)
 
     @property
     def python_name(self) -> str:
