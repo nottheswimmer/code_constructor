@@ -1,10 +1,8 @@
-import random
 from typing import Union
 
 from inflection import singularize
 
 from constructor import field_types
-from constructor.words import ADJECTIVES, NOUNS
 
 UNIQUE_CLASSNAMES = set()
 CLASS_SIGNATURES_TO_NAME = dict()
