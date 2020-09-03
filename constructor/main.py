@@ -157,6 +157,8 @@ class MetaClass:
         string_body = string_body[:-2] + ")\""
         lines.append(string_body)
 
+        if top_level:
+            del PRINTED_SIGNATURES['python']
         return '\n'.join(lines)
 
     def to_python_construction(self) -> str:
@@ -220,6 +222,8 @@ class MetaClass:
                     lines.append('')
                     lines.append(field_type.object_class.to_java())
 
+        if top_level:
+            del PRINTED_SIGNATURES['java']
         return '\n'.join(lines)
 
     def to_go(self) -> str:
@@ -246,6 +250,9 @@ class MetaClass:
             constructor_lines.append(indent(1) + f"{field} {t.to_go}")  # TODO: Scope
         lines += constructor_lines
         lines.append("}")
+
+        if top_level:
+            del PRINTED_SIGNATURES['go']
         return '\n'.join(lines)
 
     def to_c(self, imports=True) -> str:
@@ -276,6 +283,9 @@ class MetaClass:
         for field, t in self.c_fields.items():
             lines.append(indent(1) + f"{t.to_c} {field + t.c_field_suffix};")
         lines.append("};")
+
+        if top_level:
+            del PRINTED_SIGNATURES['c']
         return '\n'.join(lines)
 
     def _dump(self):
