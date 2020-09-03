@@ -259,7 +259,7 @@ class MetaClass:
             del PRINTED_SIGNATURES['go']
         return '\n'.join(lines)
 
-    def to_c(self, imports=True) -> str:
+    def to_c(self) -> str:
         top_level = 'c' not in PRINTED_SIGNATURES
         if top_level:
             PRINTED_SIGNATURES['c'] = {self.name_and_field_signature}
@@ -269,7 +269,7 @@ class MetaClass:
             PRINTED_SIGNATURES['c'].add(self.name_and_field_signature)
 
         lines = []
-        if imports:
+        if top_level:
             for include in self.c_includes:
                 lines.append(f"#include <{include}>")
             # Add another line if there were includes needed
@@ -278,7 +278,7 @@ class MetaClass:
 
         for field, t in self.c_fields.items():
             for field_type in t.embedded_objects:
-                string = field_type.object_class.to_c(imports=False)
+                string = field_type.object_class.to_c()
                 if string:
                     lines.append(string)
                     lines.append('')
