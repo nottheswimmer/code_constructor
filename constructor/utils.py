@@ -4,6 +4,7 @@ from typing import Union
 from inflection import singularize
 
 from constructor import field_types
+from constructor.words import ADJECTIVES, NOUNS
 
 
 def any_to_upper_camel(name: str) -> str:
@@ -45,10 +46,8 @@ unique_classnames = set()
 
 
 def create_unique_classname():
-    with open('english-adjectives.txt') as f:
-        random_adjective = random.choice(f.readlines()).strip()
-    with open('english-nouns.txt') as f:
-        random_noun = random.choice(f.readlines())
+    random_adjective = random.choice(ADJECTIVES)
+    random_noun = random.choice(NOUNS)
     name = any_to_upper_camel(random_adjective + "_" + random_noun).strip()
     if name not in unique_classnames:
         unique_classnames.add(name)
