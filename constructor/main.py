@@ -174,6 +174,14 @@ class MetaClass:
 
 
     def to_java(self) -> str:
+        top_level = 'java' not in PRINTED_SIGNATURES
+        if top_level:
+            PRINTED_SIGNATURES['java'] = {self.name_and_field_signature}
+        elif self.name_and_field_signature in PRINTED_SIGNATURES['java']:
+            return ''
+        else:
+            PRINTED_SIGNATURES['java'].add(self.name_and_field_signature)
+
         lines = []
 
         lines.append(f"class {self.java_name} {{")  # TODO: Scope
@@ -204,18 +212,30 @@ class MetaClass:
 
         for field, t in self.c_fields.items():
             for field_type in t.embedded_objects:
-                lines.append('')
-                lines.append(field_type.object_class.to_java())
+                string = field_type.object_class.to_java()
+                if string:
+                    lines.append('')
+                    lines.append(field_type.object_class.to_java())
 
         return '\n'.join(lines)
 
     def to_go(self) -> str:
+        top_level = 'go' not in PRINTED_SIGNATURES
+        if top_level:
+            PRINTED_SIGNATURES['go'] = {self.name_and_field_signature}
+        elif self.name_and_field_signature in PRINTED_SIGNATURES['go']:
+            return ''
+        else:
+            PRINTED_SIGNATURES['go'].add(self.name_and_field_signature)
+
         lines = []
 
         for field, t in self.c_fields.items():
             for field_type in t.embedded_objects:
-                lines.append(field_type.object_class.to_go())
-                lines.append('')
+                string = field_type.object_class.to_go()
+                if string:
+                    lines.append(field_type.object_class.to_go())
+                    lines.append('')
 
         lines.append(f"type {self.go_name} struct {{")
         constructor_lines = []
@@ -226,6 +246,14 @@ class MetaClass:
         return '\n'.join(lines)
 
     def to_c(self, imports=True) -> str:
+        top_level = 'c' not in PRINTED_SIGNATURES
+        if top_level:
+            PRINTED_SIGNATURES['c'] = {self.name_and_field_signature}
+        elif self.name_and_field_signature in PRINTED_SIGNATURES['c']:
+            return ''
+        else:
+            PRINTED_SIGNATURES['c'].add(self.name_and_field_signature)
+
         lines = []
         if imports:
             for include in self.c_includes:
@@ -236,8 +264,10 @@ class MetaClass:
 
         for field, t in self.c_fields.items():
             for field_type in t.embedded_objects:
-                lines.append(field_type.object_class.to_c(imports=False))
-                lines.append('')
+                string = field_type.object_class.to_c(imports=False)
+                if string:
+                    lines.append(string)
+                    lines.append('')
 
         lines.append(f"struct {self.c_name} {{")
         for field, t in self.c_fields.items():
