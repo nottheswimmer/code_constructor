@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Union, Set
+from typing import Dict, List, Union, Set, Tuple
 
 from constructor.field_types import Type, String, Integer, Boolean, Array
 from constructor.utils import any_to_upper_camel, any_to_lower_camel, camel_to_lower_snake, indent, primitive_to_type
@@ -115,6 +115,17 @@ class MetaClass:
         return sorted(includes)
 
     @property
+    def python_imports(self) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Dict[str, Set[str]]]:
+        i_standard = {}
+        i_third_party = {}
+        i_local = {}
+        for field_type in self.fields.values():
+            i_standard.update(field_type.python_imports[0])
+            i_third_party.update(field_type.python_imports[1])
+            i_local.update(field_type.python_imports[2])
+        return i_standard, i_third_party, i_local
+
+    @property
     def name_and_field_signature(self) -> str:
         """
         Return an arbitrary string unique to the name and fields of this class
@@ -131,6 +142,21 @@ class MetaClass:
             PRINTED_SIGNATURES['python'].add(self.name_and_field_signature)
 
         lines = []
+
+        if top_level:
+            for import_group in self.python_imports:
+                if not import_group:
+                    continue
+                for key, values in import_group.items():
+                    if not values:
+                        continue
+
+                    line = f'from {key} import '
+                    for value in values:
+                        line += value + ', '
+                    line = line[:-2]
+                    lines.append(line)
+                lines.append('')
 
         for field, t in self.c_fields.items():
             for field_type in t.embedded_objects:

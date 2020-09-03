@@ -25,7 +25,7 @@ For reference, here are the builtin Python types left that we may want to cover:
 """
 
 from abc import ABC, abstractmethod
-from typing import Set, TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple, Dict, Set
 
 if TYPE_CHECKING:
     from constructor.main import MetaClass
@@ -67,6 +67,13 @@ class Type(ABC):
     @property
     def c_field_suffix(self) -> str:
         return ''
+
+    @property
+    def python_imports(self) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Dict[str, Set[str]]]:
+        """
+        :return: Standard library, third party, and local imports
+        """
+        return ({}, {}, {})
 
     @property
     def embedded_objects(self) -> List['Object']:
@@ -132,6 +139,10 @@ class Array(Type):
         value += "]"
         self.item_type.value = original_value
         return value
+
+    @property
+    def python_imports(self) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Dict[str, Set[str]]]:
+        return ({"typing": {"List"}}, {}, {})
 
     @property
     def embedded_objects(self) -> List['Object']:
@@ -202,3 +213,7 @@ class Object(Type):
     @property
     def c_includes(self) -> Set[str]:
         return set(self.object_class.c_includes)
+
+    @property
+    def python_imports(self) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Dict[str, Set[str]]]:
+        return self.object_class.python_imports
