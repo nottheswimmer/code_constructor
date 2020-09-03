@@ -6,6 +6,16 @@ from inflection import singularize
 from constructor import field_types
 from constructor.words import ADJECTIVES, NOUNS
 
+UNIQUE_CLASSNAMES = set()
+CLASS_SIGNATURES_TO_NAME = dict()
+
+
+def cleanup():
+    from constructor.main import PRINTED_SIGNATURES
+
+    UNIQUE_CLASSNAMES.clear()
+    CLASS_SIGNATURES_TO_NAME.clear()
+    PRINTED_SIGNATURES.clear()
 
 def any_to_upper_camel(name: str) -> str:
     if not name:
@@ -42,29 +52,30 @@ def indent(i: int) -> str:
     return ' ' * i * 4
 
 
-unique_classnames = set()
-
-
 def create_unique_classname():
     random_adjective = random.choice(ADJECTIVES)
     random_noun = random.choice(NOUNS)
     name = any_to_upper_camel(random_adjective + "_" + random_noun).strip()
-    if name not in unique_classnames:
-        unique_classnames.add(name)
+    if name not in UNIQUE_CLASSNAMES:
+        UNIQUE_CLASSNAMES.add(name)
         return name
     # If the name came up with has been used, try again.
     return create_unique_classname()
 
-
-class_signatures_to_name = dict()
-
 def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: str) -> field_types.Type:
+    # Strings
     if isinstance(primitive, str):
         return field_types.String(value=primitive, length=len(primitive))
+
+    # Booleans
     if isinstance(primitive, bool):
         return field_types.Boolean(value=primitive)
+
+    # Integers
     if isinstance(primitive, int):
         return field_types.Integer(value=primitive)
+
+    # Arrays
     if isinstance(primitive, list):
         if len(primitive) == 0:
             raise NotImplementedError("Empty lists are not supported.")
@@ -82,6 +93,8 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
                 # We want the maximum length seen for the array size
                 primitive_type.length = max(primitive_type.length, len(primitive))
         return primitive_type
+
+    # Objects
     if isinstance(primitive, dict):
         from constructor.main import MetaClass
 
@@ -89,14 +102,15 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
         primitive_class = MetaClass.from_dict(field_name, primitive)
         # TODO: Something less arbitrary than using Java to check
         java_code = primitive_class.to_java()
-        if java_code in class_signatures_to_name:
-            primitive_class.name = class_signatures_to_name[java_code]
+        if java_code in CLASS_SIGNATURES_TO_NAME:
+            primitive_class.name = CLASS_SIGNATURES_TO_NAME[java_code]
         else:
-            if field_name not in unique_classnames:
-                unique_classnames.add(field_name)
+            if field_name not in UNIQUE_CLASSNAMES:
+                UNIQUE_CLASSNAMES.add(field_name)
             else:
                 primitive_class.name = create_unique_classname()
-            class_signatures_to_name[java_code] = primitive_class.name
+            CLASS_SIGNATURES_TO_NAME[java_code] = primitive_class.name
         return field_types.Object(value=primitive, object_class=primitive_class)
 
+    # Other (None/null not yet supported)
     raise NotImplementedError(f"{primitive!r} (type={type(primitive)}) is not supported!")

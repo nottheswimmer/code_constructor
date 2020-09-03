@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Set
 
 from constructor.field_types import Type, String, Integer, Boolean, Array
 from constructor.utils import any_to_upper_camel, any_to_lower_camel, camel_to_lower_snake, indent, primitive_to_type
@@ -32,6 +32,7 @@ PYTHON_BUILTIN_NAMES = ['ArithmeticError', 'AssertionError', 'AttributeError', '
                         'setattr', 'slice', 'sorted', 'staticmethod', 'str', 'sum', 'super', 'tuple', 'type', 'vars',
                         'zip']
 
+PRINTED_SIGNATURES: Dict[str, Set[str]] = {}
 
 class MetaClass:
     def __init__(self, name: str, fields: Dict[str, Type]):
@@ -106,13 +107,30 @@ class MetaClass:
             includes.update(field_type.c_includes)
         return sorted(includes)
 
+    @property
+    def name_and_field_signature(self) -> str:
+        """
+        Return an arbitrary string unique to the name and fields of this class
+        """
+        return self.name + '@@@' + str(sorted(self.java_fields))
+
     def to_python(self) -> str:
+        top_level = 'python' not in PRINTED_SIGNATURES
+        if top_level:
+            PRINTED_SIGNATURES['python'] = {self.name_and_field_signature}
+        elif self.name_and_field_signature in PRINTED_SIGNATURES['python']:
+            return ''
+        else:
+            PRINTED_SIGNATURES['python'].add(self.name_and_field_signature)
+
         lines = []
 
         for field, t in self.c_fields.items():
             for field_type in t.embedded_objects:
-                lines.append(field_type.object_class.to_python())
-                lines.append('')
+                object_string = field_type.object_class.to_python()
+                if object_string:
+                    lines.append(object_string)
+                    lines.append('')
 
         lines.append(f"class {self.python_name}:")
 
