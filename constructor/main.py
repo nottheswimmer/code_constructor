@@ -4,6 +4,8 @@ from typing import Dict, List, Union, Set, Tuple
 from constructor.field_types import Type, String, Integer, Boolean, Array
 from constructor.utils import any_to_upper_camel, any_to_lower_camel, camel_to_lower_snake, indent, primitive_to_type
 
+from inflection import pluralize, singularize
+
 
 # TODO: Find a workaround that will let me use dir(__builtin__) or similar
 #  __builtin__ does not work for recursively defined classes at the moment
@@ -60,7 +62,10 @@ class MetaClass:
         if isinstance(data, list):
             if len(data) == 0:
                 raise NotImplementedError("Top-level array cannot be an empty list")
-            return cls.from_dict(name, {"items": data})
+            items_name = pluralize(name)
+            if singularize(items_name) == name:
+                items_name = "items"
+            return cls.from_dict(name, {items_name: data})
         return cls.from_dict(name, data)
 
     @property
@@ -170,11 +175,15 @@ class MetaClass:
         # Constructor
         constructor = indent(1) + "def __init__(self, "
         constructor_body_lines = []
-        for field, t in self.python_fields.items():
-            constructor += f"{field}: {t.to_python}, "
-            constructor_body_lines.append(indent(2) + f"self.{field} = {field}")
+        field_items = self.python_fields.items()
+        if field_items:
+            for field, t in field_items:
+                constructor += f"{field}: {t.to_python}, "
+                constructor_body_lines.append(indent(2) + f"self.{field} = {field}")
+        else:
+            constructor_body_lines.append(indent(2) + "pass")
         # Remove trailing ", " and close signature / open body
-        constructor = constructor[:-2] + "):"
+        constructor = constructor.rstrip(', ') + "):"
         lines.append(constructor)
         lines += constructor_body_lines
 
@@ -182,9 +191,10 @@ class MetaClass:
         lines.append('')
         lines.append(indent(1) + "def __repr__(self):")
         string_body = indent(2) + f"return f\"{self.python_name}("
-        for field, t in self.python_fields.items():
-            string_body += f"{field}={{self.{field}!r}}, "
-        string_body = string_body[:-2] + ")\""
+        if field_items:
+            for field, t in field_items:
+                string_body += f"{field}={{self.{field}!r}}, "
+        string_body = string_body.rstrip(", ") + ")\""
         lines.append(string_body)
 
         if top_level:
