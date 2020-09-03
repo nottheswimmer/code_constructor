@@ -78,7 +78,7 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
             else:
                 # TODO: Something less arbitrary than using Java to check
                 if new_primitive_type.to_java != primitive_type.to_java:
-                    raise ValueError(f"Arrays cannot contain different types ({new_primitive_type.to_java} vs "
+                    raise NotImplementedError(f"Arrays cannot contain different types ({new_primitive_type.to_java} vs "
                                      f"{primitive_type.to_java})")
                 # We want the maximum length seen for the array size
                 primitive_type.length = max(primitive_type.length, len(primitive))
