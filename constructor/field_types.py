@@ -41,6 +41,12 @@ class Type(ABC):
     def to_python(self) -> str:
         pass
 
+    def to_python_to_dict_pair(self, name) -> Tuple[str, str]:
+        return self.original_name, f"self.{name}"
+
+    def to_python_from_dict_value(self) -> str:
+        return f"d[{self.original_name!r}]"
+
     @property
     @abstractmethod
     def to_python_value(self) -> str:
@@ -208,6 +214,25 @@ class Array(Type):
         self.item_type = item_type
         self.length = length
 
+    def to_python_to_dict_pair(self, name) -> Tuple[str, str]:
+        if isinstance(self.item_type, Array) or isinstance(self.item_type, Object):
+            original_name_copy = self.item_type.original_name
+            self.item_type.original_name = 'o'
+            string = f"[{self.item_type.to_python_to_dict_pair('o')[1].lstrip('self.')} for o in self.{name}]"
+            self.item_type.original_name = original_name_copy
+            return self.original_name, string
+        return self.original_name, f"self.{name}"
+
+
+    def to_python_from_dict_value(self) -> str:
+        if isinstance(self.item_type, Array) or isinstance(self.item_type, Object):
+            original_name_copy = self.item_type.original_name
+            self.item_type.original_name = 'o'
+            string = f"[{self.item_type.to_python_from_dict_value()} for o in d[{self.original_name!r}]"
+            self.item_type.original_name = original_name_copy
+            return string
+        return f"d[{self.original_name!r}]"
+
     @property
     def to_python_value(self) -> str:
         original_value = self.item_type.value
@@ -291,6 +316,13 @@ class Object(Type):
     @property
     def embedded_objects(self) -> List['Object']:
         return [self]
+
+    def to_python_to_dict_pair(self, name) -> Tuple[str, str]:
+        return self.original_name, f"self.{name}.to_dict()"
+
+    def to_python_from_dict_value(self) -> str:
+        return f"""{self.to_python.strip("'")}.from_dict(d[{self.original_name!r}])"""
+
 
     @property
     def to_python_value(self) -> str:

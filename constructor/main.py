@@ -157,7 +157,9 @@ class MetaClass:
 
         lines = []
 
+        # Imports
         if top_level:
+            lines.append('import json')  # serialization and deserialization to JSON seems really useful
             for import_group in self.python_imports:
                 if not import_group:
                     continue
@@ -172,6 +174,7 @@ class MetaClass:
                     lines.append(line)
                 lines.append('')
 
+        # Related objects
         for field, t in self.c_fields.items():
             for field_type in t.embedded_objects:
                 object_string = field_type.object_class.to_python()
@@ -179,6 +182,7 @@ class MetaClass:
                     lines.append(object_string)
                     lines.append('')
 
+        # Class signature
         lines.append(f"class {self.python_name}:")
 
         # Constructor
@@ -195,6 +199,39 @@ class MetaClass:
         constructor = constructor.rstrip(', ') + "):"
         lines.append(constructor)
         lines += constructor_body_lines
+
+        # from_dict method
+        lines.append('')
+        lines.append(indent(1) + '@classmethod')
+        lines.append(indent(1) + "def from_dict(cls, d: dict):")
+        string_body = indent(2) + f"return cls("
+        if field_items:
+            for field, t in field_items:
+                string_body += f"{field}=d[{t.original_name!r}], "
+        string_body = string_body.rstrip(", ") + ")"
+        lines.append(string_body)
+
+        # from_json method
+        lines.append('')
+        lines.append(indent(1) + '@classmethod')
+        lines.append(indent(1) + "def from_json(cls, data: str):")
+        lines.append(indent(2) + "return cls.from_dict(json.loads(data))")
+
+        # to_dict method
+        lines.append('')
+        lines.append(indent(1) + "def to_dict(self) -> dict:")
+        string_body = indent(2) + "return {"
+        if field_items:
+            for field, t in field_items:
+                k, v = t.to_python_to_dict_pair(field)
+                string_body += f"{k!r}: {v}, "
+        string_body = string_body.rstrip(", ") + "}"
+        lines.append(string_body)
+
+        # to_json method
+        lines.append('')
+        lines.append(indent(1) + "def to_json(self) -> str:")
+        lines.append(indent(2) + "return json.dumps(self.to_dict())")
 
         # Repr method
         lines.append('')
