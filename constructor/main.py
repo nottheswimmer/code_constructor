@@ -381,6 +381,21 @@ class MetaClass:
             del PRINTED_SIGNATURES['go']
         return '\n'.join(lines)
 
+    def to_c_construction(self) -> str:
+        line = f"{self.c_name}_new("
+        for field, t in self.c_fields.items():
+            if isinstance(t, Object):
+                line += "*"
+            line += f"{t.to_c_value}, "
+        line = line.rstrip(", ") + ")"
+        return line
+
+    def to_c_example(self) -> str:
+        # TODO: Avoid Java keywords and shadowing C builtins
+        test_var_name = any_to_lower_camel(self.name)
+        lines = [f"{self.c_name} * {test_var_name} = {self.to_c_construction()};", f"{self.c_name}_print({test_var_name});"]
+        return '\n'.join(lines)
+
     def to_c(self) -> str:
         top_level = 'c' not in PRINTED_SIGNATURES
         if top_level:
@@ -444,6 +459,14 @@ class MetaClass:
         print_statements.append(indent(1) + 'printf_s(")");')
         lines += print_statements
         lines += ["}", ""]
+
+        # Example
+        if top_level:
+            example_lines = ["int main() {"]
+            for line in self.to_c_example().splitlines():
+                example_lines.append(indent(1) + line)
+            example_lines += [indent(1) + "return 0;", '}']
+            lines += example_lines
 
         if top_level:
             del PRINTED_SIGNATURES['c']

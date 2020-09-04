@@ -53,6 +53,11 @@ class Type(ABC):
 
     @property
     @abstractmethod
+    def to_c_value(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
     def to_java(self) -> str:
         pass
 
@@ -72,7 +77,7 @@ class Type(ABC):
 
     @abstractmethod
     def to_c_printf(self, name: str) -> str:
-        return ''
+        pass
 
     @property
     def c_is_variable_length_array(self) -> bool:
@@ -116,6 +121,13 @@ class String(Type):
         # In Java, strings cannot be double quoted
         return json.dumps(self.value).lstrip('[').rstrip(']')
 
+    @property
+    def to_c_value(self) -> str:
+        import json
+
+        # In c, strings cannot be double quoted
+        return json.dumps(self.value).lstrip('[').rstrip(']')
+
     def to_c_printf(self, name: str) -> str:
         return f'printf_s("{name}=\\"%s\\"", p->{name});'
 
@@ -131,6 +143,10 @@ class Integer(Type):
 
     @property
     def to_java_value(self) -> str:
+        return repr(self.value)
+
+    @property
+    def to_c_value(self) -> str:
         return repr(self.value)
 
     def to_c_printf(self, name: str) -> str:
@@ -151,6 +167,10 @@ class Double(Type):
     def to_java_value(self) -> str:
         return repr(self.value)
 
+    @property
+    def to_c_value(self) -> str:
+        return repr(self.value)
+
     def to_c_printf(self, name: str) -> str:
         return f'printf_s("{name}=%f", p->{name});'
 
@@ -169,6 +189,11 @@ class Boolean(Type):
     @property
     def to_java_value(self) -> str:
         # In Java, booleans are false rather than False, or true rather than True
+        return repr(self.value).lower()
+
+    @property
+    def to_c_value(self) -> str:
+        # In c, booleans are false rather than False, or true rather than True
         return repr(self.value).lower()
 
     def to_c_printf(self, name: str) -> str:
@@ -203,6 +228,20 @@ class Array(Type):
         for item in self.value:
             self.item_type.value = item
             value += self.item_type.to_java_value + ", "
+        value = value.rstrip(", ")
+        value += "}"
+        self.item_type.value = original_value
+        return value
+
+    @property
+    def to_c_value(self) -> str:
+        # Array literal
+        original_value = self.item_type.value
+        value = f"({self.item_type.to_c}[]) {{"
+        for item in self.value:
+            self.item_type.value = item
+            value += "*" if isinstance(self.item_type, Object) else ""
+            value += self.item_type.to_c_value + ", "
         value = value.rstrip(", ")
         value += "}"
         self.item_type.value = original_value
@@ -270,6 +309,14 @@ class Object(Type):
         return object_class.to_java_construction()
 
     @property
+    def to_c_value(self) -> str:
+        from constructor.main import MetaClass
+
+        # Not using self.object_class so that overriding the value is supported...
+        object_class = MetaClass.from_dict(name=self.object_class.name, data=self.value)
+        return object_class.to_c_construction()
+
+    @property
     def to_python(self) -> str:
         return f"'{self.object_class.python_name}'"
 
@@ -298,4 +345,4 @@ class Object(Type):
         return set(self.object_class.java_imports)
 
     def to_c_printf(self, name: str) -> str:
-        return f'{self.object_class.to_c}_print(p->{name});'
+        return f'{self.object_class.c_name}_print(&p->{name});'
