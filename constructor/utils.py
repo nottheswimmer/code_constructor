@@ -54,19 +54,19 @@ def indent(i: int) -> str:
 def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: str) -> field_types.Type:
     # Strings
     if isinstance(primitive, str):
-        return field_types.String(value=primitive, length=len(primitive))
+        return field_types.String(value=primitive, original_name=field_name, length=len(primitive))
 
     # Booleans
     if isinstance(primitive, bool):
-        return field_types.Boolean(value=primitive)
+        return field_types.Boolean(value=primitive, original_name=field_name)
 
     # Integers
     if isinstance(primitive, int):
-        return field_types.Integer(value=primitive)
+        return field_types.Integer(value=primitive, original_name=field_name)
 
     # Floating-point types
     if isinstance(primitive, float):
-        return field_types.Double(value=primitive)
+        return field_types.Double(value=primitive, original_name=field_name)
 
     # Arrays
     if isinstance(primitive, list):
@@ -75,7 +75,8 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
         primitive_type = None
         for subprimative in primitive:
             subprimative_type = primitive_to_type(subprimative, field_name=field_name)
-            new_primitive_type = field_types.Array(value=primitive, item_type=subprimative_type, length=len(primitive))
+            new_primitive_type = field_types.Array(value=primitive, original_name=field_name,
+                                                   item_type=subprimative_type, length=len(primitive))
             if primitive_type is None:
                 primitive_type = new_primitive_type
             else:
@@ -108,7 +109,7 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
                 primitive_class.name = f"{field_name}{i}"
                 UNIQUE_CLASSNAMES.add(f"{field_name}{i}")
             CLASS_SIGNATURES_TO_NAME[signature] = primitive_class.name
-        return field_types.Object(value=primitive, object_class=primitive_class)
+        return field_types.Object(value=primitive, original_name=field_name, object_class=primitive_class)
 
     # Other (None/null not yet supported)
     raise NotImplementedError(f"{primitive!r} (type={type(primitive)}) is not supported!")

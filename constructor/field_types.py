@@ -32,8 +32,9 @@ if TYPE_CHECKING:
 
 
 class Type(ABC):
-    def __init__(self, value):
+    def __init__(self, value, original_name: str):
         self.value = value
+        self.original_name = original_name
 
     @property
     @abstractmethod
@@ -90,8 +91,8 @@ class Type(ABC):
 
 
 class String(Type):
-    def __init__(self, value: str, length: int = 255):
-        super().__init__(value=value)
+    def __init__(self, value: str, original_name: str, length: int = 255):
+        super().__init__(value=value, original_name=original_name)
         self.length = length
 
     to_python = 'str'
@@ -163,8 +164,8 @@ class Boolean(Type):
 
 
 class Array(Type):
-    def __init__(self, value: List, item_type: Type, length: int = 255):
-        super().__init__(value=value)
+    def __init__(self, value: List, original_name: str, item_type: Type, length: int = 255):
+        super().__init__(value=value, original_name=original_name)
         self.item_type = item_type
         self.length = length
 
@@ -231,8 +232,8 @@ class Array(Type):
 
 
 class Object(Type):
-    def __init__(self, value: dict, object_class: 'MetaClass'):
-        super().__init__(value=value)
+    def __init__(self, value: dict, original_name: str, object_class: 'MetaClass'):
+        super().__init__(value=value, original_name=original_name)
         self.object_class = object_class
 
     @property

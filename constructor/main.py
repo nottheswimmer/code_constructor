@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Union, Set, Tuple
+from typing import Dict, List, Union, Set, Tuple, Optional
 
 from constructor.field_types import Type, String, Integer, Boolean, Array
 from constructor.utils import any_to_upper_camel, any_to_lower_camel, camel_to_lower_snake, indent, primitive_to_type
@@ -44,10 +44,12 @@ class MetaClass:
         # Normalize field name as lowerCamel
         self.fields = {any_to_lower_camel(field): t for field, t in fields.items()}
 
+        # For JSON tags in Go and maybe importing/exporting from/to JSON later
+        self.original_name = name
+
     @classmethod
     def from_dict(cls, name: str, data: Dict[str, Union[str, bool, int, list]]):
         # TODO: Support for None
-        # TODO: Support for Dict (nested structures)
         fields = {}
         for key, value in data.items():
             fields[key] = primitive_to_type(value, field_name=key)
@@ -358,7 +360,7 @@ class MetaClass:
         lines.append(f"type {self.go_name} struct {{")
         constructor_lines = []
         for field, t in self.go_fields.items():
-            constructor_lines.append(indent(1) + f"{field} {t.to_go}")  # TODO: Scope
+            constructor_lines.append(indent(1) + f"{field} {t.to_go} `json:\"{t.original_name}\"`")  # TODO: Scope
         lines += constructor_lines
         lines.append("}")
 
