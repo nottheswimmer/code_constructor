@@ -358,10 +358,23 @@ class MetaClass:
                     lines.append('')
 
         lines.append(f"type {self.go_name} struct {{")
-        constructor_lines = []
+        struct_lines = []
         for field, t in self.go_fields.items():
-            constructor_lines.append(indent(1) + f"{field} {t.to_go} `json:\"{t.original_name}\"`")  # TODO: Scope
-        lines += constructor_lines
+            struct_lines.append(indent(1) + f"{field} {t.to_go} `json:\"{t.original_name}\"`")  # TODO: Scope
+        lines += struct_lines
+        lines.append("}")
+        lines.append('')
+
+        constructor_signature = f"func New{self.go_name}("
+        constructor_return = indent(1) + f"return &{self.go_name}{{"
+        for field, t in self.go_fields.items():
+            lower_field_name = any_to_lower_camel(field)
+            constructor_signature += f"{lower_field_name} {t.to_go}, "
+            constructor_return += f"{field}: {lower_field_name}, "
+        constructor_signature = constructor_signature.rstrip(", ") + f") *{self.go_name} {{"
+        constructor_return = constructor_return.rstrip(", ") + "}"
+        lines.append(constructor_signature)
+        lines.append(constructor_return)
         lines.append("}")
 
         if top_level:
