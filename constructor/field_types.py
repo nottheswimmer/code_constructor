@@ -70,6 +70,10 @@ class Type(ABC):
     def c_includes(self) -> Set[str]:
         return set()
 
+    @abstractmethod
+    def to_c_printf(self, name: str) -> str:
+        return ''
+
     @property
     def c_is_variable_length_array(self) -> bool:
         return False
@@ -112,6 +116,8 @@ class String(Type):
         # In Java, strings cannot be double quoted
         return json.dumps(self.value).lstrip('[').rstrip(']')
 
+    def to_c_printf(self, name: str) -> str:
+        return f'printf_s("{name}=\\"%s\\"", p->{name});'
 
 class Integer(Type):
     to_python = 'int'
@@ -127,6 +133,9 @@ class Integer(Type):
     def to_java_value(self) -> str:
         return repr(self.value)
 
+    def to_c_printf(self, name: str) -> str:
+        return f'printf_s("{name}=%d", p->{name});'
+
 
 class Double(Type):
     to_python = 'float'
@@ -141,6 +150,9 @@ class Double(Type):
     @property
     def to_java_value(self) -> str:
         return repr(self.value)
+
+    def to_c_printf(self, name: str) -> str:
+        return f'printf_s("{name}=%f", p->{name});'
 
 
 class Boolean(Type):
@@ -158,6 +170,9 @@ class Boolean(Type):
     def to_java_value(self) -> str:
         # In Java, booleans are false rather than False, or true rather than True
         return repr(self.value).lower()
+
+    def to_c_printf(self, name: str) -> str:
+        return f'printf_s("{name}=%fs, p->{name} ? "true" : "false");'
 
 
 class Array(Type):
@@ -225,6 +240,9 @@ class Array(Type):
     def c_includes(self) -> Set[str]:
         return self.item_type.c_includes
 
+    def to_c_printf(self, name: str) -> str:
+        return f'printf_s("{name}={{...}}");'
+
 
 class Object(Type):
     def __init__(self, value: dict, original_name: str, object_class: 'MetaClass'):
@@ -278,3 +296,6 @@ class Object(Type):
     @property
     def java_imports(self) -> Set[str]:
         return set(self.object_class.java_imports)
+
+    def to_c_printf(self, name: str) -> str:
+        return f'{self.object_class.to_c}_print(p->{name});'

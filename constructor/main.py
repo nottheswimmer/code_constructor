@@ -1,7 +1,7 @@
 import json
 from typing import Dict, List, Union, Set, Tuple, Optional
 
-from constructor.field_types import Type, String, Integer, Boolean, Array
+from constructor.field_types import Type, String, Integer, Boolean, Array, Double, Object
 from constructor.utils import any_to_upper_camel, any_to_lower_camel, camel_to_lower_snake, indent, primitive_to_type
 
 from inflection import pluralize, singularize
@@ -392,7 +392,8 @@ class MetaClass:
 
         lines = []
         if top_level:
-            lines.append(f"#include<malloc.h>")  # Needed for constructor
+            lines.append(f"#include <malloc.h>")  # Needed for any constructor
+            lines.append(f"#include <stdio.h>")  # Needed for any print func
             for include in self.c_includes:
                 lines.append(f"#include <{include}>")
             # Add another line if there were includes needed
@@ -425,6 +426,24 @@ class MetaClass:
             lines.append(indent(1) + f"p->{field} = {field};")
         lines += [indent(1) + "return p;", '}']
         lines.append('')
+
+        # Print method
+        lines.append(f"void {self.c_name}_print({self.c_name}* p) {{")
+        print_statements = [indent(1) + f"printf_s(\"{self.c_name}(\");"]
+        for field, t in field_items:
+            print_statements.append(indent(1) + t.to_c_printf(field))
+            if print_statements[-1].count('",') == 1:
+                print_statements[-1] = print_statements[-1].replace('",', ', ",')
+            else:
+                print_statements.append(indent(1) + 'printf_s(", ");')
+        if field_items:
+            if print_statements[-1] == indent(1) + 'printf_s(", ");':
+                print_statements.pop()
+            else:
+                print_statements[-1] = print_statements[-1].replace(', ",', '",')
+        print_statements.append(indent(1) + 'printf_s(")");')
+        lines += print_statements
+        lines += ["}", ""]
 
         if top_level:
             del PRINTED_SIGNATURES['c']
