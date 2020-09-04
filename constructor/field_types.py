@@ -71,8 +71,8 @@ class Type(ABC):
         return set()
 
     @property
-    def c_field_suffix(self) -> str:
-        return ''
+    def c_is_variable_length_array(self) -> bool:
+        return False
 
     @property
     def python_imports(self) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Dict[str, Set[str]]]:
@@ -99,6 +99,7 @@ class String(Type):
     to_java = 'String'
     to_go = 'string'
     to_c = 'char'
+    c_is_variable_length_array = True
 
     @property
     def to_python_value(self) -> str:
@@ -110,10 +111,6 @@ class String(Type):
 
         # In Java, strings cannot be double quoted
         return json.dumps(self.value).lstrip('[').rstrip(']')
-
-    @property
-    def c_field_suffix(self) -> str:
-        return f"[{self.length}]"
 
 
 class Integer(Type):
@@ -164,6 +161,8 @@ class Boolean(Type):
 
 
 class Array(Type):
+    c_is_variable_length_array = True
+
     def __init__(self, value: List, original_name: str, item_type: Type, length: int = 255):
         super().__init__(value=value, original_name=original_name)
         self.item_type = item_type
@@ -223,10 +222,6 @@ class Array(Type):
         return self.item_type.to_c
 
     @property
-    def c_field_suffix(self) -> str:
-        return self.item_type.c_field_suffix + f'[{self.length}]'  # TODO: Array size
-
-    @property
     def c_includes(self) -> Set[str]:
         return self.item_type.c_includes
 
@@ -271,10 +266,6 @@ class Object(Type):
     @property
     def to_c(self) -> str:
         return self.object_class.c_name
-
-    @property
-    def c_field_suffix(self) -> str:
-        return ''
 
     @property
     def c_includes(self) -> Set[str]:

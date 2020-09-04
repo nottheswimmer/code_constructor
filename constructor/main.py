@@ -392,13 +392,15 @@ class MetaClass:
 
         lines = []
         if top_level:
+            lines.append(f"#include<malloc.h>")  # Needed for constructor
             for include in self.c_includes:
                 lines.append(f"#include <{include}>")
             # Add another line if there were includes needed
             if lines:
                 lines.append('')
 
-        for field, t in self.c_fields.items():
+        field_items = self.c_fields.items()
+        for field, t in field_items:
             for field_type in t.embedded_objects:
                 string = field_type.object_class.to_c()
                 if string:
@@ -407,8 +409,22 @@ class MetaClass:
 
         lines.append(f"struct {self.c_name} {{")
         for field, t in self.c_fields.items():
-            lines.append(indent(1) + f"{t.to_c} {field + t.c_field_suffix};")
+            lines.append(indent(1) + f"{t.to_c} {'* ' if t.c_is_variable_length_array else ''}{field};")
         lines.append("};")
+        lines.append(f"typedef struct {self.c_name} {self.c_name};")
+        lines.append('')
+
+        # Constructor
+        constructor_signature = f"{self.c_name}* {self.c_name}_new("
+        for field, t in field_items:
+            constructor_signature += f"{t.to_c} {field}{'[]' if t.c_is_variable_length_array else ''}, "
+        constructor_signature = constructor_signature.rstrip(", ") + ") {"
+        lines.append(constructor_signature)
+        lines.append(indent(1) + f"{self.c_name}* p = malloc(sizeof({self.c_name}));")
+        for field, t in field_items:
+            lines.append(indent(1) + f"p->{field} = {field};")
+        lines += [indent(1) + "return p;", '}']
+        lines.append('')
 
         if top_level:
             del PRINTED_SIGNATURES['c']
