@@ -36,6 +36,13 @@
                         <textarea id="jsondata" name="jsondata" class="form-control" rows="6"
                                   placeholder="Enter JSON payload">{{ jsondata }}</textarea>
                     </div>
+                    <div class="form-check mb-1">
+                        <input class="form-check-input" type="checkbox" value="1" name="skipFieldsWithErrors"
+                               id="skipFieldsWithErrors"{{ " checked" if skip_fields_with_errors else "" }}>
+                        <label class="form-check-label" for="skipFieldsWithErrors">
+                            Skip fields with errors
+                        </label>
+                    </div>
                     <button type="submit" class="btn btn-primary">Convert</button>
                 </form>
             </div>
@@ -65,12 +72,7 @@
                 <div class="col-9">
                     <div class="tab-content">
                         <div class="tab-pane fade show active" id="tabone" role="tabpanel">
-                        <pre><code class="python">
-{{- metaclass.to_python() }}
-
-
-{{ metaclass.to_python_example() -}}
-                        </code></pre>
+                            <pre><code class="python">{{ metaclass.to_python() }}</code></pre>
                         </div>
                         <div class="tab-pane fade" id="tabtwo" role="tabpanel">
                             <pre><code class="java">{{ metaclass.to_java() }}</code></pre>

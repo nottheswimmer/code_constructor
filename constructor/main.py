@@ -1,7 +1,8 @@
 import json
-from typing import Dict, List, Union, Set, Tuple, Optional
+import autopep8
+from typing import Dict, List, Union, Set, Tuple
 
-from constructor.field_types import Type, String, Integer, Boolean, Array, Double, Object
+from constructor.field_types import Type, Array, Object
 from constructor.utils import any_to_upper_camel, any_to_lower_camel, camel_to_lower_snake, indent, primitive_to_type
 
 from inflection import pluralize, singularize
@@ -38,26 +39,40 @@ PRINTED_SIGNATURES: Dict[str, Set[str]] = {}
 
 class MetaClass:
     def __init__(self, name: str, fields: Dict[str, Type]):
-        # Normalize class name as UpperCamel
-        self.name = any_to_upper_camel(name)
-
-        # Normalize field name as lowerCamel
-        self.fields = {any_to_lower_camel(field): t for field, t in fields.items()}
+        if not name:
+            name += 'ClassName'  # TODO: Raise an error
 
         # For JSON tags in Go and maybe importing/exporting from/to JSON later
         self.original_name = name
 
+        # Normalize class name as UpperCamel
+        self.name = any_to_upper_camel(name)
+
+        # TODO: Maybe change them to English? e.g. "1" -> "One"
+        # If it starts with a number, fix that
+        if self.name[0].isdigit():
+            self.name = 'Item' + self.name
+
+        # Normalize field name as lowerCamel
+        self.fields = {any_to_lower_camel(field): t for field, t in fields.items()}
+
     @classmethod
-    def from_dict(cls, name: str, data: Dict[str, Union[str, bool, int, list]]):
+    def from_dict(cls, name: str, data: Dict[str, Union[str, bool, int, list]], skip_fields_with_errors=False):
         # TODO: Support for None
         fields = {}
         for key, value in data.items():
-            fields[key] = primitive_to_type(value, field_name=key)
+
+            try:
+                fields[key] = primitive_to_type(value, field_name=key)
+            except Exception:
+                if not skip_fields_with_errors:
+                    raise
+                # TODO: Warnings instead
 
         return cls(name=name, fields=fields)
 
     @classmethod
-    def from_json(cls, name: str, data: str):
+    def from_json(cls, name: str, data: str, skip_fields_with_errors=False):
         data = json.loads(data)
         # TODO: More useful support for lists
         # TODO: Bubble up a warning that we ignored everything except the first nonlist item
@@ -67,8 +82,8 @@ class MetaClass:
             items_name = pluralize(name)
             if singularize(items_name) == name:
                 items_name = "items"
-            return cls.from_dict(name, {items_name: data})
-        return cls.from_dict(name, data)
+            return cls.from_dict(name, {items_name: data}, skip_fields_with_errors)
+        return cls.from_dict(name, data, skip_fields_with_errors)
 
     @property
     def python_name(self) -> str:
@@ -220,13 +235,16 @@ class MetaClass:
         # to_dict method
         lines.append('')
         lines.append(indent(1) + "def to_dict(self) -> dict:")
-        string_body = indent(2) + "return {"
         if field_items:
+            first_item_prefix = indent(2) + "return {"
+            other_item_prefix = indent(2) + "        "
             for field, t in field_items:
                 k, v = t.to_python_to_dict_pair(field)
-                string_body += f"{k!r}: {v}, "
-        string_body = string_body.rstrip(", ") + "}"
-        lines.append(string_body)
+                lines.append(f"{first_item_prefix or other_item_prefix}{k!r}: {v}, ")
+                first_item_prefix = ""
+            lines[-1] = lines[-1].rstrip(", ") + "}"
+        else:
+            lines.append(indent(2) + "return {}")
 
         # to_json method
         lines.append('')
@@ -236,16 +254,29 @@ class MetaClass:
         # Repr method
         lines.append('')
         lines.append(indent(1) + "def __repr__(self):")
-        string_body = indent(2) + f"return f\"{self.python_name}("
         if field_items:
+            lines.append(indent(2) + f"return f\"{self.python_name}(\" \\")
             for field, t in field_items:
-                string_body += f"{field}={{self.{field}!r}}, "
-        string_body = string_body.rstrip(", ") + ")\""
-        lines.append(string_body)
+                # 7 is the number of spaces in "return "
+                lines.append(indent(1) + " "*7 + f"f\"{field}={{self.{field}!r}}, \" \\")
+            lines[-1] = lines[-1].rstrip(", \" \\") + ")\""
+        else:
+            lines.append(indent(2) + f"return f\"{self.python_name}()\"")
+
+        # Code example
+        if top_level:
+            lines.append('')
+            lines.append('def main():')
+            for line in self.to_python_example().splitlines():
+                lines.append(indent(1) + line)
+            lines.append('')
+            lines.append("""if __name__ == '__main__':""")
+            lines.append(indent(1) + "main()")
 
         if top_level:
             del PRINTED_SIGNATURES['python']
-        return '\n'.join(lines)
+        code = '\n'.join(lines)
+        return autopep8.fix_code(code, options={"experimental": True})
 
     def to_python_construction(self) -> str:
         line = f"{self.python_name}("

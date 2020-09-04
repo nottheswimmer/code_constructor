@@ -13,11 +13,13 @@ def index():
     try:
         classname = request.form.get('classname') or ''
         jsondata = request.form.get('jsondata') or ''
+        skip_fields_with_errors = bool(request.form.get('skipFieldsWithErrors'))
+        print(request.form)
         metaclass = None
         errors = {}
         if classname and jsondata:
             try:
-                metaclass = MetaClass.from_json(classname, jsondata)
+                metaclass = MetaClass.from_json(classname, jsondata, skip_fields_with_errors)
             except JSONDecodeError as e:
                 errors['JSONDecodeError'] = e
             except NotImplementedError as e:
@@ -26,7 +28,8 @@ def index():
                                    classname=classname,
                                    jsondata=jsondata,
                                    metaclass=metaclass,
-                                   errors=errors)
+                                   errors=errors,
+                                   skip_fields_with_errors=skip_fields_with_errors)
         return rendered
     finally:
         cleanup()
