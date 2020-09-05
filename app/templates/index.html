@@ -33,7 +33,8 @@
                                 NotImplementedError: {{ errors['NotImplementedError'] }}
                             </div>
                         {% endif %}
-                        <textarea id="jsondata" name="jsondata" class="form-control" rows="6"
+                        <textarea autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                                  id="jsondata" name="jsondata" class="form-control" rows="6"
                                   placeholder="Enter JSON payload">{{ jsondata }}</textarea>
                     </div>
                     <div class="form-check mb-1">
