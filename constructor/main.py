@@ -59,6 +59,37 @@ class MetaClass:
             return cls.from_dict(name, {items_name: data}, skip_fields_with_errors)
         return cls.from_dict(name, data, skip_fields_with_errors)
 
+    class Decorators:
+        @classmethod
+        def handle_visit(cls, language: str):
+            def handle_visited_language(decorated):
+                def wrapper(self: 'MetaClass'):
+                    top_level, visited = self.handle_visit_start(language)
+                    if visited:
+                        result = ''
+                    else:
+                        result = decorated(self, top_level)
+                        self.handle_visit_end(language, top_level)
+                    return result
+                return wrapper
+            return handle_visited_language
+
+
+    def handle_visit_start(self, language):
+        visited = False
+        top_level = language not in PRINTED_SIGNATURES
+        if top_level:
+            PRINTED_SIGNATURES[language] = {self.get_name_and_field_signature()}
+        elif self.get_name_and_field_signature() in PRINTED_SIGNATURES[language]:
+            visited = True
+        else:
+            PRINTED_SIGNATURES[language].add(self.get_name_and_field_signature())
+        return top_level, visited
+
+    def handle_visit_end(self, language, top_level):
+        if top_level:
+            del PRINTED_SIGNATURES[language]
+
     @property
     def python_name(self) -> str:
         return self.name
@@ -116,27 +147,15 @@ class MetaClass:
         """
         return self.name + '@@@' + str(sorted(self.get_java_fields()))
 
-    def generate_python(self) -> str:
-        top_level = 'python' not in PRINTED_SIGNATURES
-        if top_level:
-            PRINTED_SIGNATURES['python'] = {self.get_name_and_field_signature()}
-        elif self.get_name_and_field_signature() in PRINTED_SIGNATURES['python']:
-            return ''
-        else:
-            PRINTED_SIGNATURES['python'].add(self.get_name_and_field_signature())
-
+    @Decorators.handle_visit('python')
+    def generate_python(self, top_level: bool) -> str:
         lines = []
         if top_level:
             lines += self.generate_python_import_lines()
         lines += self.generate_python_related_classes_lines()
         lines += self.generate_python_class_lines()
-
-        # Code example
         if top_level:
             lines += self.generate_python_main_function_lines()
-
-        if top_level:
-            del PRINTED_SIGNATURES['python']
         return '\n'.join(lines)
 
     def generate_python_class_lines(self):
@@ -284,15 +303,8 @@ class MetaClass:
                  f"System.out.println({test_var_name});"]
         return lines
 
-    def generate_java(self) -> str:
-        top_level = 'java' not in PRINTED_SIGNATURES
-        if top_level:
-            PRINTED_SIGNATURES['java'] = {self.get_name_and_field_signature()}
-        elif self.get_name_and_field_signature() in PRINTED_SIGNATURES['java']:
-            return ''
-        else:
-            PRINTED_SIGNATURES['java'].add(self.get_name_and_field_signature())
-
+    @Decorators.handle_visit('java')
+    def generate_java(self, top_level: bool) -> str:
         lines = []
         if top_level:
             for java_import in self.get_java_imports():
@@ -379,20 +391,10 @@ class MetaClass:
                 if string:
                     lines.append('')
                     lines.append(string)
-
-        if top_level:
-            del PRINTED_SIGNATURES['java']
         return '\n'.join(lines)
 
-    def generate_go(self) -> str:
-        top_level = 'go' not in PRINTED_SIGNATURES
-        if top_level:
-            PRINTED_SIGNATURES['go'] = {self.get_name_and_field_signature()}
-        elif self.get_name_and_field_signature() in PRINTED_SIGNATURES['go']:
-            return ''
-        else:
-            PRINTED_SIGNATURES['go'].add(self.get_name_and_field_signature())
-
+    @Decorators.handle_visit('go')
+    def generate_go(self, top_level: bool) -> str:
         lines = []
 
         for field, t in self.get_go_fields().items():
@@ -421,9 +423,6 @@ class MetaClass:
         lines.append(constructor_signature)
         lines.append(constructor_return)
         lines.append("}")
-
-        if top_level:
-            del PRINTED_SIGNATURES['go']
         return '\n'.join(lines)
 
     def generate_c_object(self) -> str:
@@ -442,15 +441,8 @@ class MetaClass:
                  f"{self.c_name}_print({test_var_name});"]
         return lines
 
-    def generate_c(self) -> str:
-        top_level = 'c' not in PRINTED_SIGNATURES
-        if top_level:
-            PRINTED_SIGNATURES['c'] = {self.get_name_and_field_signature()}
-        elif self.get_name_and_field_signature() in PRINTED_SIGNATURES['c']:
-            return ''
-        else:
-            PRINTED_SIGNATURES['c'].add(self.get_name_and_field_signature())
-
+    @Decorators.handle_visit('c')
+    def generate_c(self, top_level: bool) -> str:
         lines = []
         if top_level:
             lines.append(f"#include <malloc.h>")  # Needed for any constructor
@@ -514,6 +506,4 @@ class MetaClass:
             example_lines += [indent(1) + "return 0;", '}']
             lines += example_lines
 
-        if top_level:
-            del PRINTED_SIGNATURES['c']
         return '\n'.join(lines)
