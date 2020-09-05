@@ -366,15 +366,15 @@ class Object(Type):
 
     @property
     def c_includes(self) -> Set[str]:
-        return set(self.object_class.c_includes)
+        return set(self.object_class.get_c_includes())
 
     @property
     def python_imports(self) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Dict[str, Set[str]]]:
-        return self.object_class.python_imports
+        return self.object_class.get_python_imports()
 
     @property
     def java_imports(self) -> Set[str]:
-        return set(self.object_class.java_imports)
+        return set(self.object_class.get_java_imports())
 
     def to_c_printf(self, name: str) -> str:
         return f'{self.object_class.c_name}_print(&p->{name});'
