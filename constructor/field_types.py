@@ -203,7 +203,7 @@ class Boolean(Type):
         return repr(self.value).lower()
 
     def to_c_printf(self, name: str) -> str:
-        return f'printf_s("{name}=%fs, p->{name} ? "true" : "false");'
+        return f'printf_s("{name}=%s\", p->{name} ? "true" : "false");'
 
 
 class Array(Type):
