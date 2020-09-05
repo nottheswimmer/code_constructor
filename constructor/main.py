@@ -240,23 +240,25 @@ class MetaClass:
         return related_object_definitions
 
     def generate_python_import_lines(self) -> List[str]:
-        import_lines = ['import json']  # serialization and deserialization to JSON seems really useful
+        import_lines = ['import json']
         for import_group in self.get_python_imports():
             if not import_group:
                 continue
             for key, values in import_group.items():
                 if not values:
                     continue
-
-                line = f'from {key} import '
-                for value in values:
-                    line += value + ', '
-                line = line[:-2]
-                import_lines.append(line)
+                import_lines.append(self.generate_python_import_line(key, values))
             import_lines.append('')
         return import_lines
 
-    def to_python_construction(self) -> str:
+    def generate_python_import_line(self, key, values):
+        import_line = f'from {key} import '
+        for value in values:
+            import_line += value + ', '
+        import_line = import_line[:-2]
+        return import_line
+
+    def generate_python_object(self) -> str:
         line = f"{self.python_name}("
         for field, t in self.get_python_fields().items():
             line += f"{field}={t.to_python_value}, "
@@ -264,25 +266,25 @@ class MetaClass:
         return line
 
     def generate_python_example_lines(self) -> List[str]:
-        test_var_name = add_suffix_to_reserved_python_words(camel_to_lower_snake(self.name), "_object")
-        lines = [f"{test_var_name} = {self.to_python_construction()}", f"print({test_var_name})"]
+        example_var_name = add_suffix_to_reserved_python_words(camel_to_lower_snake(self.name), "_object")
+        lines = [f"{example_var_name} = {self.generate_python_object()}", f"print({example_var_name})"]
         return lines
 
-    def to_java_construction(self) -> str:
+    def generate_java_object(self) -> str:
         line = f"new {self.java_name}("
         for field, t in self.get_java_fields().items():
             line += f"{t.to_java_value}, "
         line = line.rstrip(", ") + ")"
         return line
 
-    def to_java_example(self) -> str:
+    def generate_java_example_lines(self) -> List[str]:
         # TODO: Avoid Java keywords and shadowing Java builtins
         test_var_name = any_to_lower_camel(self.name)
-        lines = [f"{self.java_name} {test_var_name} = {self.to_java_construction()};",
+        lines = [f"{self.java_name} {test_var_name} = {self.generate_java_object()};",
                  f"System.out.println({test_var_name});"]
-        return '\n'.join(lines)
+        return lines
 
-    def to_java(self) -> str:
+    def generate_java(self) -> str:
         top_level = 'java' not in PRINTED_SIGNATURES
         if top_level:
             PRINTED_SIGNATURES['java'] = {self.get_name_and_field_signature()}
@@ -363,7 +365,7 @@ class MetaClass:
         # For java, let's go ahead and add a main method with an example in the top-level course
         if top_level:
             lines.append(indent(1) + "public static void main(String[] args) {")
-            for line in self.to_java_example().splitlines():
+            for line in self.generate_java_example_lines():
                 lines.append(indent(2) + line)
             lines.append(indent(1) + "}")
             lines.append('')
@@ -373,7 +375,7 @@ class MetaClass:
 
         for field, t in self.get_c_fields().items():
             for field_type in t.embedded_objects:
-                string = field_type.object_class.to_java()
+                string = field_type.object_class.generate_java()
                 if string:
                     lines.append('')
                     lines.append(string)
@@ -382,7 +384,7 @@ class MetaClass:
             del PRINTED_SIGNATURES['java']
         return '\n'.join(lines)
 
-    def to_go(self) -> str:
+    def generate_go(self) -> str:
         top_level = 'go' not in PRINTED_SIGNATURES
         if top_level:
             PRINTED_SIGNATURES['go'] = {self.get_name_and_field_signature()}
@@ -395,7 +397,7 @@ class MetaClass:
 
         for field, t in self.get_go_fields().items():
             for field_type in t.embedded_objects:
-                string = field_type.object_class.to_go()
+                string = field_type.object_class.generate_go()
                 if string:
                     lines.append(string)
                     lines.append('')
@@ -424,7 +426,7 @@ class MetaClass:
             del PRINTED_SIGNATURES['go']
         return '\n'.join(lines)
 
-    def to_c_construction(self) -> str:
+    def generate_c_object(self) -> str:
         line = f"{self.c_name}_new("
         for field, t in self.get_c_fields().items():
             if isinstance(t, Object):
@@ -433,14 +435,14 @@ class MetaClass:
         line = line.rstrip(", ") + ")"
         return line
 
-    def to_c_example(self) -> str:
+    def generate_c_example_lines(self) -> List[str]:
         # TODO: Avoid Java keywords and shadowing C builtins
         test_var_name = any_to_lower_camel(self.name)
-        lines = [f"{self.c_name} * {test_var_name} = {self.to_c_construction()};",
+        lines = [f"{self.c_name} * {test_var_name} = {self.generate_c_object()};",
                  f"{self.c_name}_print({test_var_name});"]
-        return '\n'.join(lines)
+        return lines
 
-    def to_c(self) -> str:
+    def generate_c(self) -> str:
         top_level = 'c' not in PRINTED_SIGNATURES
         if top_level:
             PRINTED_SIGNATURES['c'] = {self.get_name_and_field_signature()}
@@ -462,7 +464,7 @@ class MetaClass:
         field_items = self.get_c_fields().items()
         for field, t in field_items:
             for field_type in t.embedded_objects:
-                string = field_type.object_class.to_c()
+                string = field_type.object_class.generate_c()
                 if string:
                     lines.append(string)
                     lines.append('')
@@ -507,7 +509,7 @@ class MetaClass:
         # Example
         if top_level:
             example_lines = ["int main() {"]
-            for line in self.to_c_example().splitlines():
+            for line in self.generate_c_example_lines():
                 example_lines.append(indent(1) + line)
             example_lines += [indent(1) + "return 0;", '}']
             lines += example_lines

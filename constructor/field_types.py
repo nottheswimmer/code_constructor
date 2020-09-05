@@ -330,7 +330,7 @@ class Object(Type):
 
         # Not using self.object_class so that overriding the value is supported...
         object_class = MetaClass.from_dict(name=self.object_class.name, data=self.value)
-        return object_class.to_python_construction()
+        return object_class.generate_python_object()
 
     @property
     def to_java_value(self) -> str:
@@ -338,7 +338,7 @@ class Object(Type):
 
         # Not using self.object_class so that overriding the value is supported...
         object_class = MetaClass.from_dict(name=self.object_class.name, data=self.value)
-        return object_class.to_java_construction()
+        return object_class.generate_java_object()
 
     @property
     def to_c_value(self) -> str:
@@ -346,7 +346,7 @@ class Object(Type):
 
         # Not using self.object_class so that overriding the value is supported...
         object_class = MetaClass.from_dict(name=self.object_class.name, data=self.value)
-        return object_class.to_c_construction()
+        return object_class.generate_c_object()
 
     @property
     def to_python(self) -> str:
