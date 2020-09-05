@@ -170,12 +170,11 @@ class MetaClass:
         return class_lines
 
     def generate_python_repr_method_lines(self):
-        repr_lines = ['']
-        repr_lines.append(indent(1) + "def __repr__(self):")
-        fields = self.get_python_fields()
-        if fields:
+        repr_lines = ['',
+                      indent(1) + "def __repr__(self):"]
+        if self.fields:
             repr_lines.append(indent(2) + f"return f\"{self.python_name}(\" \\")
-            for field, t in fields.items():
+            for field, t in self.get_python_fields().items():
                 # 7 is the number of spaces in "return "
                 repr_lines.append(indent(1) + " " * 7 + f"f\"{field}={{self.{field}!r}}, \" \\")
             repr_lines[-1] = repr_lines[-1].rstrip(", \" \\") + ")\""
@@ -184,19 +183,18 @@ class MetaClass:
         return repr_lines
 
     def generate_python_to_json_method_lines(self):
-        to_json_lines = ['']
-        to_json_lines.append(indent(1) + "def to_json(self) -> str:")
-        to_json_lines.append(indent(2) + "return json.dumps(self.to_dict())")
+        to_json_lines = ['', indent(1) +
+                         "def to_json(self) -> str:", indent(2) +
+                         "return json.dumps(self.to_dict())"]
         return to_json_lines
 
     def generate_python_to_dict_method_lines(self):
         to_dict_lines = ['']
         to_dict_lines.append(indent(1) + "def to_dict(self) -> dict:")
-        fields = self.get_python_fields()
-        if fields:
+        if self.fields:
             first_item_prefix = indent(2) + "return {"
             other_item_prefix = indent(2) + "        "
-            for field, t in fields.items():
+            for field, t in self.get_python_fields().items():
                 k, v = t.to_python_to_dict_pair(field)
                 to_dict_lines.append(f"{first_item_prefix or other_item_prefix}{k!r}: {v}, ")
                 first_item_prefix = ""
@@ -216,9 +214,8 @@ class MetaClass:
         from_dict_lines = ['', indent(1) + '@classmethod',
                            indent(1) + "def from_dict(cls, d: dict):"]
         string_body = indent(2) + f"return cls("
-        fields = self.get_python_fields()
-        if fields:
-            for field, t in fields.items():
+        if self.fields:
+            for field, t in self.get_python_fields().items():
                 string_body += f"{field}=d[{t.original_name!r}], "
         string_body = string_body.rstrip(", ") + ")"
         from_dict_lines.append(string_body)
@@ -227,8 +224,8 @@ class MetaClass:
     def generate_python_constructor_lines(self):
         constructor_lines = [indent(1) + "def __init__(self, "]
         fields = self.get_python_fields()
-        if fields:
-            for field, t in fields.items():
+        if self.fields:
+            for field, t in self.get_python_fields().items():
                 constructor_lines[0] += f"{field}: {t.to_python}, "
                 constructor_lines.append(indent(2) + f"self.{field} = {field}")
         else:
@@ -306,62 +303,52 @@ class MetaClass:
     def generate_java(self, top_level: bool) -> str:
         lines = []
         if top_level:
-            for java_import in self.get_java_imports():
-                lines.append(f"import {java_import};")
-            # Add another line if there were imports needed
-            if lines:
-                lines.append('')
+            lines += self.generate_java_import_lines()
+        class_scope = 'public' if top_level else ''
+        generate_main_method = top_level
+        lines += self.generate_java_class_lines(class_scope, generate_main_method)
+        lines += self.generate_java_related_classes_lines()
+        return '\n'.join(lines)
 
-        lines.append(f"{'public ' if top_level else ''}class {self.java_name} {{")  # TODO: Scope
-        field_lines = []
-        for field, t in self.get_java_fields().items():
-            field_lines.append(indent(1) + f"private {t.to_java} {field};")
-        lines += field_lines
+    def generate_java_related_classes_lines(self):
+        lines = []
+        for field, t in self.get_c_fields().items():
+            for field_type in t.embedded_objects:
+                string = field_type.object_class.generate_java()
+                if string:
+                    lines.append('')
+                    lines.append(string)
+        return lines
+
+    def generate_java_class_lines(self, class_scope, generate_main_method):
+        lines = [f"{class_scope + ' ' if class_scope else ''}class {self.java_name} {{"]
+        lines += self.generate_java_field_lines()
         lines.append('')
-
-        # No constructor is needed if we have no fields
-        # Also no getters or setters would be needed
-        field_items = self.get_java_fields().items()
-        if field_items:
-            # Build constructor
-            constructor = indent(1) + f"public {self.java_name}("
-            constructor_lines = []
-            for field, t in field_items:
-                constructor += f"{t.to_java} {field}, "
-                constructor_lines.append(indent(2) + f"this.{field} = {field};")
-            # Remove trailing ", " and close signature / open body
-            constructor = constructor[:-2] + ") {"
-            lines.append(constructor)
-            lines += constructor_lines
-
-            # Add closing curly
-            lines.append(indent(1) + "}")
+        if self.fields:
+            lines += self.generate_java_constructor_lines()
             lines.append('')
+            lines += self.generate_java_getter_and_setter_lines()
+        lines += self.generate_java_to_string_method_lines()
+        if generate_main_method:
+            lines += self.generate_java_main_method_lines()
+        lines.append("}")
+        return lines
 
-            # Add getters and setters
-            for field, t in field_items:
-                getter_lines = [
-                    indent(1) + f"public {t.to_java} get{field[0].upper()}{field[1:]}() {{",
-                    indent(2) + f'return this.{field};',
-                    indent(1) + '}',
-                    ''
-                ]
-                lines += getter_lines
+    def generate_java_main_method_lines(self):
+        lines = []
+        lines.append(indent(1) + "public static void main(String[] args) {")
+        for line in self.generate_java_example_lines():
+            lines.append(indent(2) + line)
+        lines.append(indent(1) + "}")
+        lines.append('')
+        return lines
 
-                setter_lines = [
-                    indent(1) + f"public void set{field[0].upper()}{field[1:]}({t.to_java} {field}) {{",
-                    indent(2) + f'this.{field} = {field};',
-                    indent(1) + '}',
-                    ''
-                ]
-
-                lines += setter_lines
-
-        # Add toString method
+    def generate_java_to_string_method_lines(self):
+        lines = []
         lines.append(indent(1) + "public String toString() {")
         string_body = indent(2) + f'return "{self.java_name}('
-        if field_items:
-            for field, t in field_items:
+        if self.fields:
+            for field, t in self.get_java_fields().items():
                 if isinstance(t, Array):
                     string_body += f'{field}=" + Arrays.toString(this.{field}) + ", '
                 else:
@@ -369,28 +356,59 @@ class MetaClass:
             string_body = string_body.rstrip(', ')
         string_body += ')";'
         lines.append(string_body)
-        # Add closing curly
         lines.append(indent(1) + "}")
         lines.append('')
+        return lines
 
-        # For java, let's go ahead and add a main method with an example in the top-level course
-        if top_level:
-            lines.append(indent(1) + "public static void main(String[] args) {")
-            for line in self.generate_java_example_lines():
-                lines.append(indent(2) + line)
-            lines.append(indent(1) + "}")
+    def generate_java_constructor_lines(self):
+        constructor_lines = [indent(1) + f"public {self.java_name}("]
+        for field, t in self.get_java_fields().items():
+            constructor_lines[0] += f"{t.to_java} {field}, "
+            constructor_lines.append(indent(2) + f"this.{field} = {field};")
+        # Remove trailing ", " and close signature / open body
+        constructor_lines[0] = constructor_lines[0][:-2] + ") {"
+        constructor_lines.append(indent(1) + "}")
+        return constructor_lines
+
+    def generate_java_field_lines(self):
+        field_lines = []
+        for field, t in self.get_java_fields().items():
+            field_lines.append(indent(1) + f"private {t.to_java} {field};")
+        return field_lines
+
+    def generate_java_getter_and_setter_lines(self):
+        getter_and_settter_lines = []
+        for field, t in self.get_java_fields().items():
+            getter_and_settter_lines += self.generate_java_getter_lines(field, t)
+            getter_and_settter_lines += self.generate_java_setter_lines(field, t)
+        return getter_and_settter_lines
+
+    def generate_java_setter_lines(self, field, t):
+        setter_lines = [
+            indent(1) + f"public void set{field[0].upper()}{field[1:]}({t.to_java} {field}) {{",
+            indent(2) + f'this.{field} = {field};',
+            indent(1) + '}',
+            ''
+        ]
+        return setter_lines
+
+    def generate_java_getter_lines(self, field, t):
+        getter_lines = [
+            indent(1) + f"public {t.to_java} get{field[0].upper()}{field[1:]}() {{",
+            indent(2) + f'return this.{field};',
+            indent(1) + '}',
+            ''
+        ]
+        return getter_lines
+
+    def generate_java_import_lines(self):
+        lines = []
+        for java_import in self.get_java_imports():
+            lines.append(f"import {java_import};")
+        # Add another line if there were imports needed
+        if lines:
             lines.append('')
-
-        # Add final closing curly
-        lines.append("}")
-
-        for field, t in self.get_c_fields().items():
-            for field_type in t.embedded_objects:
-                string = field_type.object_class.generate_java()
-                if string:
-                    lines.append('')
-                    lines.append(string)
-        return '\n'.join(lines)
+        return lines
 
     @Decorators.handle_visit('go')
     def generate_go(self, top_level: bool) -> str:
