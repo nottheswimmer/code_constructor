@@ -71,9 +71,10 @@ class MetaClass:
                         result = decorated(self, top_level)
                         self.handle_visit_end(language, top_level)
                     return result
-                return wrapper
-            return handle_visited_language
 
+                return wrapper
+
+            return handle_visited_language
 
     def handle_visit_start(self, language):
         visited = False
@@ -205,16 +206,15 @@ class MetaClass:
         return to_dict_lines
 
     def generate_python_from_json_classmethod_lines(self):
-        from_json_lines = ['']
-        from_json_lines.append(indent(1) + '@classmethod')
-        from_json_lines.append(indent(1) + "def from_json(cls, data: str):")
-        from_json_lines.append(indent(2) + "return cls.from_dict(json.loads(data))")
+        from_json_lines = ['',
+                           indent(1) + '@classmethod',
+                           indent(1) + "def from_json(cls, data: str):",
+                           indent(2) + "return cls.from_dict(json.loads(data))"]
         return from_json_lines
 
     def generate_python_from_dict_classmethod_lines(self):
-        from_dict_lines = ['']
-        from_dict_lines.append(indent(1) + '@classmethod')
-        from_dict_lines.append(indent(1) + "def from_dict(cls, d: dict):")
+        from_dict_lines = ['', indent(1) + '@classmethod',
+                           indent(1) + "def from_dict(cls, d: dict):"]
         string_body = indent(2) + f"return cls("
         fields = self.get_python_fields()
         if fields:
@@ -238,9 +238,8 @@ class MetaClass:
         return constructor_lines
 
     def generate_python_main_function_lines(self):
-        main_function_lines = []
-        main_function_lines.append('')
-        main_function_lines.append('def main():')
+        main_function_lines = ['',
+                               'def main():']
         for line in self.generate_python_example_lines():
             main_function_lines.append(indent(1) + line)
         main_function_lines.append('')
