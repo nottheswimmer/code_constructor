@@ -98,16 +98,15 @@ class TestMetaClassSimple(TestCase):
                 os.remove(fp)
 
     def test_python_compiles(self):
-        source = self.meta_class.generate_python()
-        compile(source, "simple.py", 'exec')
+        return compile(self.python_source, "simple.py", 'exec')
 
     def test_python_has_expected_classes(self):
-        compiled = compile(self.python_source, "simple.py", 'exec')
+        compiled = self.test_python_compiles()
         for expected_class in SIMPLE_TEST_JSON_EXPECTED_CLASSES:
             self.assertIn(expected_class, compiled.co_names,
                           f"Output ({compiled.co_names}) is missing the {expected_class} class")
 
-    def test_python_main_method_runs(self):
+    def test_python_main_runs(self):
         self.python_module.main()
 
     def test_python_to_json_output_matches_original_structure(self):
@@ -123,3 +122,7 @@ class TestMetaClassSimple(TestCase):
 
     def test_c_compiles(self):
         subprocess.check_output([GCC_BINARY_PATH, self.c_file_name, '-o', self.c_executable_file_name])
+
+    def test_c_main_runs(self):
+        self.test_c_compiles()
+        subprocess.check_output([self.c_executable_file_name])
