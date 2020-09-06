@@ -8,6 +8,12 @@ from unittest import TestCase
 from constructor.main import MetaClass
 from constructor.utils import cleanup
 
+# TEST ENVIRONMENT CONFIGURATION
+JAVAC_BINARY_PATH = 'javac'
+GO_BINARY_PATH = 'go'
+GOFMT_BINARY_PATH = 'gofmt'
+
+# TEST VARIABLE CONSTANTS
 SIMPLE_TEST_JSON = """\
 {
     "researcher": {
@@ -43,12 +49,19 @@ class TestMetaClassSimple(TestCase):
 
         # Java
         self.java_source = self.meta_class.generate_java()
-        self.java_name = f"{self.class_name}.java"
+        self.java_file_name = f"{self.class_name}.java"
         self.java_class_file_names = []
         for classname in self.expected_classes:
             self.java_class_file_names.append(f"{classname}.class")
-        with open(self.java_name, "w") as f:
+        with open(self.java_file_name, "w") as f:
             f.write(self.java_source)
+
+        # Go
+        self.go_source = self.meta_class.generate_go()
+        self.go_file_name = f"{self.class_name}.go"
+        self.go_object_file_name = f"{self.class_name}.o"
+        with open(self.go_file_name, "w") as f:
+            f.write(self.go_source)
 
     def tearDown(self):
         cleanup()  # TODO: This should NOT be necessary...
@@ -58,7 +71,12 @@ class TestMetaClassSimple(TestCase):
 
         # Java
         # TODO: Remove .class files unintentionally created as well?
-        for fp in (self.java_name, *self.java_class_file_names):
+        for fp in (self.java_file_name, *self.java_class_file_names):
+            if os.path.exists(fp):
+                os.remove(fp)
+
+        # Go
+        for fp in (self.go_file_name, self.go_object_file_name):
             if os.path.exists(fp):
                 os.remove(fp)
 
@@ -81,4 +99,8 @@ class TestMetaClassSimple(TestCase):
         self.assertEqual(json.loads(test_json), json.loads(self.test_json))
 
     def test_java_compiles(self):
-        subprocess.check_output(['javac', self.java_name])
+        subprocess.check_output([JAVAC_BINARY_PATH, self.java_file_name])
+
+    def test_go_compiles(self):
+        print(self.go_source)
+        subprocess.check_output([GO_BINARY_PATH, 'tool', 'compile', self.go_file_name])

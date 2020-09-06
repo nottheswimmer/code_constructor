@@ -99,8 +99,6 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
         if signature in CLASS_SIGNATURES_TO_NAME:
             primitive_class.name = CLASS_SIGNATURES_TO_NAME[signature]
         else:
-            print(signature, "not in", CLASS_SIGNATURES_TO_NAME)
-            # print("brand new:", signature)
             if field_name not in UNIQUE_CLASSNAMES:
                 UNIQUE_CLASSNAMES.add(field_name)
             else:

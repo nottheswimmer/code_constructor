@@ -102,9 +102,14 @@ class MetaClass:
     @Decorators.handle_visit('go')
     def generate_go(self, top_level: bool) -> str:
         lines = []
+        if top_level:
+            lines.append(self.generate_go_package_line())
+            lines.append('')
         lines += self.generate_go_related_structs_lines()
         lines += self.generate_go_struct_lines()
         lines += self.generate_go_constructor_lines()
+        if top_level:
+            lines += self.generate_go_main_function_lines()
         return '\n'.join(lines)
 
     @Decorators.handle_visit('c')
@@ -554,3 +559,11 @@ class MetaClass:
         if lines:
             lines.append('')
         return lines
+
+    def generate_go_main_function_lines(self):
+        lines = ["func main() { }"]  # TODO: A simple usage example
+        return lines
+
+    def generate_go_package_line(self):
+        return "package main"
+
