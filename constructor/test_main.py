@@ -45,6 +45,22 @@ class TestMetaClassSimple(TestCase):
             self.assertIn(expected_class, compiled.co_names,
                           f"Output ({compiled.co_names}) is missing the {expected_class} class")
 
+    def test_python_main_method_runs(self):
+        # Setup. TODO: Abstract this
+        module_name = 'test_module'
+        try:
+            source = self.meta_class.generate_python()
+            spec = spec_from_loader(module_name, loader=None)
+            module = module_from_spec(spec)
+            exec(source, module.__dict__)
+            sys.modules[module_name] = module
+
+            # Actual test
+            module.main()
+        finally:
+            # Teardown. TODO: Abstract this
+            del sys.modules[module_name]
+
     def test_python_to_json_output_matches_original_structure(self):
         # Setup. TODO: Abstract this
         module_name = 'test_module'
