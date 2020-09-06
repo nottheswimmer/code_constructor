@@ -410,22 +410,13 @@ class MetaClass:
     @Decorators.handle_visit('go')
     def generate_go(self, top_level: bool) -> str:
         lines = []
+        lines += self.generate_go_related_structs_lines()
+        lines += self.generate_go_struct_lines()
+        lines += self.generate_go_constructor_lines()
+        return '\n'.join(lines)
 
-        for field, t in self.get_go_fields().items():
-            for field_type in t.embedded_objects:
-                string = field_type.object_class.generate_go()
-                if string:
-                    lines.append(string)
-                    lines.append('')
-
-        lines.append(f"type {self.go_name} struct {{")
-        struct_lines = []
-        for field, t in self.get_go_fields().items():
-            struct_lines.append(indent(1) + f"{field} {t.to_go} `json:\"{t.original_name}\"`")  # TODO: Scope
-        lines += struct_lines
-        lines.append("}")
-        lines.append('')
-
+    def generate_go_constructor_lines(self):
+        lines = []
         constructor_signature = f"func New{self.go_name}("
         constructor_return = indent(1) + f"return &{self.go_name}{{"
         for field, t in self.get_go_fields().items():
@@ -437,7 +428,28 @@ class MetaClass:
         lines.append(constructor_signature)
         lines.append(constructor_return)
         lines.append("}")
-        return '\n'.join(lines)
+        return lines
+
+    def generate_go_struct_lines(self):
+        lines = []
+        lines.append(f"type {self.go_name} struct {{")
+        struct_lines = []
+        for field, t in self.get_go_fields().items():
+            struct_lines.append(indent(1) + f"{field} {t.to_go} `json:\"{t.original_name}\"`")  # TODO: Scope
+        lines += struct_lines
+        lines.append("}")
+        lines.append('')
+        return lines
+
+    def generate_go_related_structs_lines(self):
+        lines = []
+        for field, t in self.get_go_fields().items():
+            for field_type in t.embedded_objects:
+                string = field_type.object_class.generate_go()
+                if string:
+                    lines.append(string)
+                    lines.append('')
+        return lines
 
     def generate_c_object(self) -> str:
         line = f"{self.c_name}_new("
