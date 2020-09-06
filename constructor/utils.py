@@ -95,11 +95,11 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
 
         field_name = singularize(field_name)
         primitive_class = MetaClass.from_dict(field_name, primitive)
-        signature = primitive_class.get_name_and_field_signature
+        signature = primitive_class.get_name_and_field_signature()
         if signature in CLASS_SIGNATURES_TO_NAME:
-            # print("previously seen:", signature)
             primitive_class.name = CLASS_SIGNATURES_TO_NAME[signature]
         else:
+            print(signature, "not in", CLASS_SIGNATURES_TO_NAME)
             # print("brand new:", signature)
             if field_name not in UNIQUE_CLASSNAMES:
                 UNIQUE_CLASSNAMES.add(field_name)

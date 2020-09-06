@@ -29,6 +29,7 @@ class TestMetaClassSimple(TestCase):
     def setUp(self) -> None:
         self.test_json = SIMPLE_TEST_JSON
         self.class_name = "Simple"
+        self.expected_classes = SIMPLE_TEST_JSON_EXPECTED_CLASSES
         self.meta_class = MetaClass.from_json(self.class_name, self.test_json)
 
         # Python
@@ -42,9 +43,11 @@ class TestMetaClassSimple(TestCase):
 
         # Java
         self.java_source = self.meta_class.generate_java()
-        self.javaname = f"{self.class_name}.java"
-        self.javacname = f"{self.class_name}.javac"
-        with open(self.javaname, "w") as f:
+        self.java_name = f"{self.class_name}.java"
+        self.java_class_file_names = []
+        for classname in self.expected_classes:
+            self.java_class_file_names.append(f"{classname}.class")
+        with open(self.java_name, "w") as f:
             f.write(self.java_source)
 
     def tearDown(self):
@@ -54,7 +57,8 @@ class TestMetaClassSimple(TestCase):
         del sys.modules[self.python_module_name]
 
         # Java
-        for fp in (self.javaname, self.javacname):
+        # TODO: Remove .class files unintentionally created as well?
+        for fp in (self.java_name, *self.java_class_file_names):
             if os.path.exists(fp):
                 os.remove(fp)
 
@@ -77,4 +81,4 @@ class TestMetaClassSimple(TestCase):
         self.assertEqual(json.loads(test_json), json.loads(self.test_json))
 
     def test_java_compiles(self):
-        subprocess.check_output(['javac', self.javaname])
+        subprocess.check_output(['javac', self.java_name])
