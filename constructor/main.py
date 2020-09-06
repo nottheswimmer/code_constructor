@@ -121,7 +121,7 @@ class MetaClass:
         return '\n'.join(lines)
 
     # Supplemental methods and functions to make generating code easier
-    def handle_visit_start(self, language):
+    def handle_visit_start(self, language: str) -> Tuple[bool, bool]:
         visited = False
         top_level = language not in PRINTED_SIGNATURES
         if top_level:
@@ -194,7 +194,7 @@ class MetaClass:
         return self.name + '@@@' + str(sorted(self.get_java_fields()))
 
     # Methods to generate code called by core code generation methods
-    def generate_python_class_lines(self):
+    def generate_python_class_lines(self) -> List[str]:
         class_lines = [f"class {self.python_name}:"]
         class_lines += self.generate_python_constructor_lines()
         class_lines += self.generate_python_from_dict_classmethod_lines()
@@ -204,7 +204,7 @@ class MetaClass:
         class_lines += self.generate_python_repr_method_lines()
         return class_lines
 
-    def generate_python_repr_method_lines(self):
+    def generate_python_repr_method_lines(self) -> List[str]:
         repr_lines = ['',
                       indent(1) + "def __repr__(self):"]
         if self.fields:
@@ -217,15 +217,15 @@ class MetaClass:
             repr_lines.append(indent(2) + f"return f\"{self.python_name}()\"")
         return repr_lines
 
-    def generate_python_to_json_method_lines(self):
+    def generate_python_to_json_method_lines(self) -> List[str]:
         to_json_lines = ['', indent(1) +
                          "def to_json(self) -> str:", indent(2) +
                          "return json.dumps(self.to_dict())"]
         return to_json_lines
 
-    def generate_python_to_dict_method_lines(self):
-        to_dict_lines = ['']
-        to_dict_lines.append(indent(1) + "def to_dict(self) -> dict:")
+    def generate_python_to_dict_method_lines(self) -> List[str]:
+        to_dict_lines = ['',
+                         indent(1) + "def to_dict(self) -> dict:"]
         if self.fields:
             first_item_prefix = indent(2) + "return {"
             other_item_prefix = indent(2) + "        "
@@ -238,14 +238,14 @@ class MetaClass:
             to_dict_lines.append(indent(2) + "return {}")
         return to_dict_lines
 
-    def generate_python_from_json_classmethod_lines(self):
+    def generate_python_from_json_classmethod_lines(self) -> List[str]:
         from_json_lines = ['',
                            indent(1) + '@classmethod',
                            indent(1) + "def from_json(cls, data: str):",
                            indent(2) + "return cls.from_dict(json.loads(data))"]
         return from_json_lines
 
-    def generate_python_from_dict_classmethod_lines(self):
+    def generate_python_from_dict_classmethod_lines(self) -> List[str]:
         from_dict_lines = ['', indent(1) + '@classmethod',
                            indent(1) + "def from_dict(cls, d: dict):"]
         string_body = indent(2) + f"return cls("
@@ -256,7 +256,7 @@ class MetaClass:
         from_dict_lines.append(string_body)
         return from_dict_lines
 
-    def generate_python_constructor_lines(self):
+    def generate_python_constructor_lines(self) -> List[str]:
         constructor_lines = [indent(1) + "def __init__(self, "]
         if self.fields:
             for field, t in self.get_python_fields().items():
@@ -268,7 +268,7 @@ class MetaClass:
         constructor_lines[0] = constructor_lines[0].rstrip(', ') + "):"
         return constructor_lines
 
-    def generate_python_main_function_lines(self):
+    def generate_python_main_function_lines(self) -> List[str]:
         main_function_lines = ['',
                                'def main():']
         for line in self.generate_python_example_lines():
@@ -296,11 +296,11 @@ class MetaClass:
             for key, values in import_group.items():
                 if not values:
                     continue
-                import_lines.append(self.generate_python_import_line(key, values))
+                import_lines.append(self.generate_python_import_line(key, sorted(values)))
             import_lines.append('')
         return import_lines
 
-    def generate_python_import_line(self, key, values):
+    def generate_python_import_line(self, key: str, values: List[str]) -> str:
         import_line = f'from {key} import '
         for value in values:
             import_line += value + ', '
@@ -333,7 +333,7 @@ class MetaClass:
                  f"System.out.println({test_var_name});"]
         return lines
 
-    def generate_java_related_classes_lines(self):
+    def generate_java_related_classes_lines(self) -> List[str]:
         lines = []
         for field, t in self.get_c_fields().items():
             for field_type in t.embedded_objects:
@@ -343,7 +343,7 @@ class MetaClass:
                     lines.append(string)
         return lines
 
-    def generate_java_class_lines(self, class_scope, generate_main_method):
+    def generate_java_class_lines(self, class_scope, generate_main_method) -> List[str]:
         lines = [f"{class_scope + ' ' if class_scope else ''}class {self.java_name} {{"]
         lines += self.generate_java_field_lines()
         lines.append('')
@@ -357,7 +357,7 @@ class MetaClass:
         lines.append("}")
         return lines
 
-    def generate_java_main_method_lines(self):
+    def generate_java_main_method_lines(self) -> List[str]:
         lines = [indent(1) + "public static void main(String[] args) {"]
         for line in self.generate_java_example_lines():
             lines.append(indent(2) + line)
@@ -365,7 +365,7 @@ class MetaClass:
         lines.append('')
         return lines
 
-    def generate_java_to_string_method_lines(self):
+    def generate_java_to_string_method_lines(self) -> List[str]:
         lines = [indent(1) + "public String toString() {"]
         string_body = indent(2) + f'return "{self.java_name}('
         if self.fields:
@@ -381,7 +381,7 @@ class MetaClass:
         lines.append('')
         return lines
 
-    def generate_java_constructor_lines(self):
+    def generate_java_constructor_lines(self) -> List[str]:
         constructor_lines = [indent(1) + f"public {self.java_name}("]
         for field, t in self.get_java_fields().items():
             constructor_lines[0] += f"{t.to_java} {field}, "
@@ -391,20 +391,20 @@ class MetaClass:
         constructor_lines.append(indent(1) + "}")
         return constructor_lines
 
-    def generate_java_field_lines(self):
+    def generate_java_field_lines(self) -> List[str]:
         field_lines = []
         for field, t in self.get_java_fields().items():
             field_lines.append(indent(1) + f"private {t.to_java} {field};")
         return field_lines
 
-    def generate_java_getter_and_setter_lines(self):
+    def generate_java_getter_and_setter_lines(self) -> List[str]:
         getter_and_settter_lines = []
         for field, t in self.get_java_fields().items():
             getter_and_settter_lines += self.generate_java_getter_lines(field, t)
             getter_and_settter_lines += self.generate_java_setter_lines(field, t)
         return getter_and_settter_lines
 
-    def generate_java_setter_lines(self, field, t):
+    def generate_java_setter_lines(self, field: str, t: Type) -> List[str]:
         setter_lines = [
             indent(1) + f"public void set{field[0].upper()}{field[1:]}({t.to_java} {field}) {{",
             indent(2) + f'this.{field} = {field};',
@@ -413,7 +413,7 @@ class MetaClass:
         ]
         return setter_lines
 
-    def generate_java_getter_lines(self, field, t):
+    def generate_java_getter_lines(self, field: str, t: Type) -> List[str]:
         getter_lines = [
             indent(1) + f"public {t.to_java} get{field[0].upper()}{field[1:]}() {{",
             indent(2) + f'return this.{field};',
@@ -422,7 +422,7 @@ class MetaClass:
         ]
         return getter_lines
 
-    def generate_java_import_lines(self):
+    def generate_java_import_lines(self) -> List[str]:
         lines = []
         for java_import in self.get_java_imports():
             lines.append(f"import {java_import};")
@@ -431,7 +431,7 @@ class MetaClass:
             lines.append('')
         return lines
 
-    def generate_go_constructor_lines(self):
+    def generate_go_constructor_lines(self) -> List[str]:
         lines = []
         constructor_signature = f"func New{self.go_name}("
         constructor_return = indent(1) + f"return &{self.go_name}{{"
@@ -446,7 +446,7 @@ class MetaClass:
         lines.append("}")
         return lines
 
-    def generate_go_struct_lines(self):
+    def generate_go_struct_lines(self) -> List[str]:
         lines = []
         lines.append(f"type {self.go_name} struct {{")
         struct_lines = []
@@ -457,7 +457,7 @@ class MetaClass:
         lines.append('')
         return lines
 
-    def generate_go_related_structs_lines(self):
+    def generate_go_related_structs_lines(self) -> List[str]:
         lines = []
         for field, t in self.get_go_fields().items():
             for field_type in t.embedded_objects:
@@ -483,7 +483,7 @@ class MetaClass:
                  f"{self.c_name}_print({test_var_name});"]
         return lines
 
-    def generate_c_example_code_lines(self):
+    def generate_c_example_code_lines(self) -> List[str]:
         lines = []
         example_lines = ["int main() {"]
         for line in self.generate_c_example_lines():
@@ -492,9 +492,8 @@ class MetaClass:
         lines += example_lines
         return lines
 
-    def generate_c_struct_print_function(self):
-        lines = []
-        lines.append(f"void {self.c_name}_print({self.c_name}* p) {{")
+    def generate_c_struct_print_function(self) -> List[str]:
+        lines = [f"void {self.c_name}_print({self.c_name}* p) {{"]
         print_statements = [indent(1) + f"printf_s(\"{self.c_name}(\");"]
         for field, t in self.get_c_fields().items():
             print_statements.append(indent(1) + t.to_c_printf(field))
@@ -512,7 +511,7 @@ class MetaClass:
         lines += ["}", ""]
         return lines
 
-    def generate_c_constructor_lines(self):
+    def generate_c_constructor_lines(self) -> List[str]:
         lines = []
         constructor_signature = f"{self.c_name}* {self.c_name}_new("
         for field, t in self.get_c_fields().items():
@@ -526,9 +525,8 @@ class MetaClass:
         lines.append('')
         return lines
 
-    def generate_c_struct_lines(self):
-        lines = []
-        lines.append(f"struct {self.c_name} {{")
+    def generate_c_struct_lines(self) -> List[str]:
+        lines = [f"struct {self.c_name} {{"]
         for field, t in self.get_c_fields().items():
             lines.append(indent(1) + f"{t.to_c} {'* ' if t.c_is_variable_length_array else ''}{field};")
         lines.append("};")
@@ -536,7 +534,7 @@ class MetaClass:
         lines.append('')
         return lines
 
-    def generate_c_related_structs_lines(self):
+    def generate_c_related_structs_lines(self) -> List[str]:
         lines = []
         for field, t in self.get_c_fields().items():
             for field_type in t.embedded_objects:
@@ -546,7 +544,7 @@ class MetaClass:
                     lines.append('')
         return lines
 
-    def generate_c_import_lines(self):
+    def generate_c_import_lines(self) -> List[str]:
         lines = []
         lines.append(f"#include <malloc.h>")  # Needed for any constructor
         lines.append(f"#include <stdio.h>")  # Needed for any print func
