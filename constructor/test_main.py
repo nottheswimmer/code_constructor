@@ -2,7 +2,9 @@ import os
 import sys
 import json
 import subprocess
+from abc import ABC, abstractmethod
 from importlib.util import spec_from_loader, module_from_spec
+from typing import Tuple
 from unittest import TestCase
 
 from constructor.main import MetaClass
@@ -16,29 +18,23 @@ GCC_BINARY_PATH = 'gcc'
 # AUTO TEST ENVIRONMENT CONFIGURATION
 IS_WINDOWS = os.name == 'nt'
 
-# TEST VARIABLE CONSTANTS
-SIMPLE_TEST_JSON = """\
-{
-    "researcher": {
-        "name": "Ford Prefect",
-        "species": "Betelgeusian",
-        "relatives": [
-            {
-                "name": "Zaphod Beeblebrox",
-                "species": "Betelgeusian"
-            }
-        ]
-    }
-}
-"""
-SIMPLE_TEST_JSON_EXPECTED_CLASSES = ("Simple", "Researcher", "Relative")
+class AbstractMetaClass(ABC):
+    @property
+    @abstractmethod
+    def class_name(self) -> str:
+        pass
 
+    @property
+    @abstractmethod
+    def test_json(self) -> str:
+        pass
 
-class TestMetaClassSimple(TestCase):
-    def setUp(self) -> None:
-        self.test_json = SIMPLE_TEST_JSON
-        self.class_name = "Simple"
-        self.expected_classes = SIMPLE_TEST_JSON_EXPECTED_CLASSES
+    @property
+    @abstractmethod
+    def expected_classes(self) -> Tuple[str]:
+        pass
+
+    def setUp(self):
         self.meta_class = MetaClass.from_json(self.class_name, self.test_json)
 
         # Python
@@ -102,7 +98,7 @@ class TestMetaClassSimple(TestCase):
 
     def test_python_has_expected_classes(self):
         compiled = self.test_python_compiles()
-        for expected_class in SIMPLE_TEST_JSON_EXPECTED_CLASSES:
+        for expected_class in self.expected_classes:
             self.assertIn(expected_class, compiled.co_names,
                           f"Output ({compiled.co_names}) is missing the {expected_class} class")
 
@@ -129,3 +125,23 @@ class TestMetaClassSimple(TestCase):
     def test_c_main_runs(self):
         self.test_c_compiles()
         subprocess.check_output([self.c_executable_file_name])
+
+
+class TestMetaClassSimple(AbstractMetaClass, TestCase):
+    class_name = "Simple"
+    test_json = """\
+{
+    "researcher": {
+        "name": "Ford Prefect",
+        "species": "Betelgeusian",
+        "relatives": [
+            {
+                "name": "Zaphod Beeblebrox",
+                "species": "Betelgeusian"
+            }
+        ]
+    }
+}
+"""
+    expected_classes = ("Simple", "Researcher", "Relative")
+
