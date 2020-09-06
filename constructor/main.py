@@ -223,7 +223,6 @@ class MetaClass:
 
     def generate_python_constructor_lines(self):
         constructor_lines = [indent(1) + "def __init__(self, "]
-        fields = self.get_python_fields()
         if self.fields:
             for field, t in self.get_python_fields().items():
                 constructor_lines[0] += f"{field}: {t.to_python}, "
@@ -335,8 +334,7 @@ class MetaClass:
         return lines
 
     def generate_java_main_method_lines(self):
-        lines = []
-        lines.append(indent(1) + "public static void main(String[] args) {")
+        lines = [indent(1) + "public static void main(String[] args) {"]
         for line in self.generate_java_example_lines():
             lines.append(indent(2) + line)
         lines.append(indent(1) + "}")
@@ -344,8 +342,7 @@ class MetaClass:
         return lines
 
     def generate_java_to_string_method_lines(self):
-        lines = []
-        lines.append(indent(1) + "public String toString() {")
+        lines = [indent(1) + "public String toString() {"]
         string_body = indent(2) + f'return "{self.java_name}('
         if self.fields:
             for field, t in self.get_java_fields().items():
