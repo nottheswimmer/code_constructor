@@ -11,7 +11,10 @@ from constructor.utils import cleanup
 # TEST ENVIRONMENT CONFIGURATION
 JAVAC_BINARY_PATH = 'javac'
 GO_BINARY_PATH = 'go'
-GOFMT_BINARY_PATH = 'gofmt'
+GCC_BINARY_PATH = 'gcc'
+
+# AUTO TEST ENVIRONMENT CONFIGURATION
+IS_WINDOWS = os.name == 'nt'
 
 # TEST VARIABLE CONSTANTS
 SIMPLE_TEST_JSON = """\
@@ -63,6 +66,15 @@ class TestMetaClassSimple(TestCase):
         with open(self.go_file_name, "w") as f:
             f.write(self.go_source)
 
+        # C
+        self.c_source = self.meta_class.generate_c()
+        self.c_file_name = f"{self.class_name}.c"
+        self.c_executable_file_name = f"{self.class_name}"
+        if IS_WINDOWS:
+            self.c_executable_file_name += '.exe'
+        with open(self.c_file_name, "w") as f:
+            f.write(self.c_source)
+
     def tearDown(self):
         cleanup()  # TODO: This should NOT be necessary...
 
@@ -77,6 +89,11 @@ class TestMetaClassSimple(TestCase):
 
         # Go
         for fp in (self.go_file_name, self.go_object_file_name):
+            if os.path.exists(fp):
+                os.remove(fp)
+
+        # C
+        for fp in (self.c_file_name, self.c_executable_file_name):
             if os.path.exists(fp):
                 os.remove(fp)
 
@@ -102,5 +119,7 @@ class TestMetaClassSimple(TestCase):
         subprocess.check_output([JAVAC_BINARY_PATH, self.java_file_name])
 
     def test_go_compiles(self):
-        print(self.go_source)
         subprocess.check_output([GO_BINARY_PATH, 'tool', 'compile', self.go_file_name])
+
+    def test_c_compiles(self):
+        subprocess.check_output([GCC_BINARY_PATH, self.c_file_name, '-o', self.c_executable_file_name])
