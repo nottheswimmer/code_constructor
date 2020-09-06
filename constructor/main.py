@@ -76,6 +76,51 @@ class MetaClass:
 
             return handle_visited_language
 
+    # Core methods for generating code
+    @Decorators.handle_visit('python')
+    def generate_python(self, top_level: bool) -> str:
+        lines = []
+        if top_level:
+            lines += self.generate_python_import_lines()
+        lines += self.generate_python_related_classes_lines()
+        lines += self.generate_python_class_lines()
+        if top_level:
+            lines += self.generate_python_main_function_lines()
+        return '\n'.join(lines)
+
+    @Decorators.handle_visit('java')
+    def generate_java(self, top_level: bool) -> str:
+        lines = []
+        if top_level:
+            lines += self.generate_java_import_lines()
+        class_scope = 'public' if top_level else ''
+        generate_main_method = top_level
+        lines += self.generate_java_class_lines(class_scope, generate_main_method)
+        lines += self.generate_java_related_classes_lines()
+        return '\n'.join(lines)
+
+    @Decorators.handle_visit('go')
+    def generate_go(self, top_level: bool) -> str:
+        lines = []
+        lines += self.generate_go_related_structs_lines()
+        lines += self.generate_go_struct_lines()
+        lines += self.generate_go_constructor_lines()
+        return '\n'.join(lines)
+
+    @Decorators.handle_visit('c')
+    def generate_c(self, top_level: bool) -> str:
+        lines = []
+        if top_level:
+            lines += self.generate_c_import_lines()
+        lines += self.generate_c_related_structs_lines()
+        lines += self.generate_c_struct_lines()
+        lines += self.generate_c_constructor_lines()
+        lines += self.generate_c_struct_print_function()
+        if top_level:
+            lines += self.generate_c_example_code_lines()
+        return '\n'.join(lines)
+
+    # Supplemental methods and functions to make generating code easier
     def handle_visit_start(self, language):
         visited = False
         top_level = language not in PRINTED_SIGNATURES
@@ -111,8 +156,24 @@ class MetaClass:
         return {add_suffix_to_reserved_python_words(camel_to_lower_snake(field), "_field"): t for field, t in
                 self.fields.items()}
 
+    def get_python_imports(self) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Dict[str, Set[str]]]:
+        i_standard = {}
+        i_third_party = {}
+        i_local = {}
+        for field_type in self.fields.values():
+            i_standard.update(field_type.python_imports[0])
+            i_third_party.update(field_type.python_imports[1])
+            i_local.update(field_type.python_imports[2])
+        return i_standard, i_third_party, i_local
+
     def get_java_fields(self) -> Dict[str, Type]:
         return {field: t for field, t in self.fields.items()}
+
+    def get_java_imports(self) -> List[str]:
+        imports = set()
+        for field_type in self.fields.values():
+            imports.update(field_type.java_imports)
+        return sorted(imports)
 
     def get_go_fields(self) -> Dict[str, Type]:
         return {any_to_upper_camel(field): t for field, t in self.fields.items()}
@@ -126,39 +187,13 @@ class MetaClass:
             includes.update(field_type.c_includes)
         return sorted(includes)
 
-    def get_python_imports(self) -> Tuple[Dict[str, Set[str]], Dict[str, Set[str]], Dict[str, Set[str]]]:
-        i_standard = {}
-        i_third_party = {}
-        i_local = {}
-        for field_type in self.fields.values():
-            i_standard.update(field_type.python_imports[0])
-            i_third_party.update(field_type.python_imports[1])
-            i_local.update(field_type.python_imports[2])
-        return i_standard, i_third_party, i_local
-
-    def get_java_imports(self) -> List[str]:
-        imports = set()
-        for field_type in self.fields.values():
-            imports.update(field_type.java_imports)
-        return sorted(imports)
-
     def get_name_and_field_signature(self) -> str:
         """
         Return an arbitrary string unique to the name and fields of this class
         """
         return self.name + '@@@' + str(sorted(self.get_java_fields()))
 
-    @Decorators.handle_visit('python')
-    def generate_python(self, top_level: bool) -> str:
-        lines = []
-        if top_level:
-            lines += self.generate_python_import_lines()
-        lines += self.generate_python_related_classes_lines()
-        lines += self.generate_python_class_lines()
-        if top_level:
-            lines += self.generate_python_main_function_lines()
-        return '\n'.join(lines)
-
+    # Methods to generate code called by core code generation methods
     def generate_python_class_lines(self):
         class_lines = [f"class {self.python_name}:"]
         class_lines += self.generate_python_constructor_lines()
@@ -298,17 +333,6 @@ class MetaClass:
                  f"System.out.println({test_var_name});"]
         return lines
 
-    @Decorators.handle_visit('java')
-    def generate_java(self, top_level: bool) -> str:
-        lines = []
-        if top_level:
-            lines += self.generate_java_import_lines()
-        class_scope = 'public' if top_level else ''
-        generate_main_method = top_level
-        lines += self.generate_java_class_lines(class_scope, generate_main_method)
-        lines += self.generate_java_related_classes_lines()
-        return '\n'.join(lines)
-
     def generate_java_related_classes_lines(self):
         lines = []
         for field, t in self.get_c_fields().items():
@@ -407,14 +431,6 @@ class MetaClass:
             lines.append('')
         return lines
 
-    @Decorators.handle_visit('go')
-    def generate_go(self, top_level: bool) -> str:
-        lines = []
-        lines += self.generate_go_related_structs_lines()
-        lines += self.generate_go_struct_lines()
-        lines += self.generate_go_constructor_lines()
-        return '\n'.join(lines)
-
     def generate_go_constructor_lines(self):
         lines = []
         constructor_signature = f"func New{self.go_name}("
@@ -466,19 +482,6 @@ class MetaClass:
         lines = [f"{self.c_name} * {test_var_name} = {self.generate_c_object()};",
                  f"{self.c_name}_print({test_var_name});"]
         return lines
-
-    @Decorators.handle_visit('c')
-    def generate_c(self, top_level: bool) -> str:
-        lines = []
-        if top_level:
-            lines += self.generate_c_import_lines()
-        lines += self.generate_c_related_structs_lines()
-        lines += self.generate_c_struct_lines()
-        lines += self.generate_c_constructor_lines()
-        lines += self.generate_c_struct_print_function()
-        if top_level:
-            lines += self.generate_c_example_code_lines()
-        return '\n'.join(lines)
 
     def generate_c_example_code_lines(self):
         lines = []
