@@ -471,51 +471,35 @@ class MetaClass:
     def generate_c(self, top_level: bool) -> str:
         lines = []
         if top_level:
-            lines.append(f"#include <malloc.h>")  # Needed for any constructor
-            lines.append(f"#include <stdio.h>")  # Needed for any print func
-            for include in self.get_c_includes():
-                lines.append(f"#include <{include}>")
-            # Add another line if there were includes needed
-            if lines:
-                lines.append('')
+            lines += self.generate_c_import_lines()
+        lines += self.generate_c_related_structs_lines()
+        lines += self.generate_c_struct_lines()
+        lines += self.generate_c_constructor_lines()
+        lines += self.generate_c_struct_print_function()
+        if top_level:
+            lines += self.generate_c_example_code_lines()
+        return '\n'.join(lines)
 
-        field_items = self.get_c_fields().items()
-        for field, t in field_items:
-            for field_type in t.embedded_objects:
-                string = field_type.object_class.generate_c()
-                if string:
-                    lines.append(string)
-                    lines.append('')
+    def generate_c_example_code_lines(self):
+        lines = []
+        example_lines = ["int main() {"]
+        for line in self.generate_c_example_lines():
+            example_lines.append(indent(1) + line)
+        example_lines += [indent(1) + "return 0;", '}']
+        lines += example_lines
+        return lines
 
-        lines.append(f"struct {self.c_name} {{")
-        for field, t in self.get_c_fields().items():
-            lines.append(indent(1) + f"{t.to_c} {'* ' if t.c_is_variable_length_array else ''}{field};")
-        lines.append("};")
-        lines.append(f"typedef struct {self.c_name} {self.c_name};")
-        lines.append('')
-
-        # Constructor
-        constructor_signature = f"{self.c_name}* {self.c_name}_new("
-        for field, t in field_items:
-            constructor_signature += f"{t.to_c} {field}{'[]' if t.c_is_variable_length_array else ''}, "
-        constructor_signature = constructor_signature.rstrip(", ") + ") {"
-        lines.append(constructor_signature)
-        lines.append(indent(1) + f"{self.c_name}* p = malloc(sizeof({self.c_name}));")
-        for field, t in field_items:
-            lines.append(indent(1) + f"p->{field} = {field};")
-        lines += [indent(1) + "return p;", '}']
-        lines.append('')
-
-        # Print method
+    def generate_c_struct_print_function(self):
+        lines = []
         lines.append(f"void {self.c_name}_print({self.c_name}* p) {{")
         print_statements = [indent(1) + f"printf_s(\"{self.c_name}(\");"]
-        for field, t in field_items:
+        for field, t in self.get_c_fields().items():
             print_statements.append(indent(1) + t.to_c_printf(field))
             if print_statements[-1].count('",') == 1:
                 print_statements[-1] = print_statements[-1].replace('",', ', ",')
             else:
                 print_statements.append(indent(1) + 'printf_s(", ");')
-        if field_items:
+        if self.fields:
             if print_statements[-1] == indent(1) + 'printf_s(", ");':
                 print_statements.pop()
             else:
@@ -523,13 +507,49 @@ class MetaClass:
         print_statements.append(indent(1) + 'printf_s(")");')
         lines += print_statements
         lines += ["}", ""]
+        return lines
 
-        # Example
-        if top_level:
-            example_lines = ["int main() {"]
-            for line in self.generate_c_example_lines():
-                example_lines.append(indent(1) + line)
-            example_lines += [indent(1) + "return 0;", '}']
-            lines += example_lines
+    def generate_c_constructor_lines(self):
+        lines = []
+        constructor_signature = f"{self.c_name}* {self.c_name}_new("
+        for field, t in self.get_c_fields().items():
+            constructor_signature += f"{t.to_c} {field}{'[]' if t.c_is_variable_length_array else ''}, "
+        constructor_signature = constructor_signature.rstrip(", ") + ") {"
+        lines.append(constructor_signature)
+        lines.append(indent(1) + f"{self.c_name}* p = malloc(sizeof({self.c_name}));")
+        for field, t in self.get_c_fields().items():
+            lines.append(indent(1) + f"p->{field} = {field};")
+        lines += [indent(1) + "return p;", '}']
+        lines.append('')
+        return lines
 
-        return '\n'.join(lines)
+    def generate_c_struct_lines(self):
+        lines = []
+        lines.append(f"struct {self.c_name} {{")
+        for field, t in self.get_c_fields().items():
+            lines.append(indent(1) + f"{t.to_c} {'* ' if t.c_is_variable_length_array else ''}{field};")
+        lines.append("};")
+        lines.append(f"typedef struct {self.c_name} {self.c_name};")
+        lines.append('')
+        return lines
+
+    def generate_c_related_structs_lines(self):
+        lines = []
+        for field, t in self.get_c_fields().items():
+            for field_type in t.embedded_objects:
+                string = field_type.object_class.generate_c()
+                if string:
+                    lines.append(string)
+                    lines.append('')
+        return lines
+
+    def generate_c_import_lines(self):
+        lines = []
+        lines.append(f"#include <malloc.h>")  # Needed for any constructor
+        lines.append(f"#include <stdio.h>")  # Needed for any print func
+        for include in self.get_c_includes():
+            lines.append(f"#include <{include}>")
+        # Add another line if there were includes needed
+        if lines:
+            lines.append('')
+        return lines
