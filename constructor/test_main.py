@@ -120,6 +120,9 @@ class TestMetaClassSimple(TestCase):
     def test_go_compiles(self):
         subprocess.check_output([GO_BINARY_PATH, 'tool', 'compile', self.go_file_name])
 
+    def test_go_main_runs(self):
+        subprocess.check_output([GO_BINARY_PATH, 'run', self.go_file_name])
+
     def test_c_compiles(self):
         subprocess.check_output([GCC_BINARY_PATH, self.c_file_name, '-o', self.c_executable_file_name])
 
