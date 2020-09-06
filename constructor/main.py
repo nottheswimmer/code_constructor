@@ -251,7 +251,7 @@ class MetaClass:
         string_body = indent(2) + f"return cls("
         if self.fields:
             for field, t in self.get_python_fields().items():
-                string_body += f"{field}=d[{t.original_name!r}], "
+                string_body += f"{field}={t.to_python_from_dict_value()}, "
         string_body = string_body.rstrip(", ") + ")"
         from_dict_lines.append(string_body)
         return from_dict_lines

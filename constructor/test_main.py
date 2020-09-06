@@ -4,6 +4,7 @@ from importlib.util import spec_from_loader, module_from_spec
 from unittest import TestCase
 
 from constructor.main import MetaClass
+from constructor.utils import cleanup
 
 SIMPLE_TEST_JSON = """\
 {
@@ -27,6 +28,9 @@ class TestMetaClassSimple(TestCase):
         self.test_json = SIMPLE_TEST_JSON
         self.simple_meta_class = MetaClass.from_json("Simple", self.test_json)
 
+    def tearDown(self):
+        cleanup()  # TODO: This should NOT be necessary...
+
     def test_python_compiles(self):
         source = self.simple_meta_class.generate_python()
         compile(source, "simple.py", 'exec')
@@ -35,7 +39,7 @@ class TestMetaClassSimple(TestCase):
         source = self.simple_meta_class.generate_python()
         compiled = compile(source, "simple.py", 'exec')
         for expected_class in SIMPLE_TEST_JSON_EXPECTED_CLASSES:
-            assert expected_class in compiled.co_names, f"Output is missing the {expected_class} class"
+            assert expected_class in compiled.co_names, f"Output ({compiled.co_names}) is missing the {expected_class} class"
 
     def test_python_to_json_output_matches_original_structure(self):
         # Setup. TODO: Abstract this

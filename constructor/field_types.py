@@ -137,6 +137,7 @@ class String(Type):
     def to_c_printf(self, name: str) -> str:
         return f'printf_s("{name}=\\"%s\\"", p->{name});'
 
+
 class Integer(Type):
     to_python = 'int'
     to_java = 'int'
@@ -223,12 +224,12 @@ class Array(Type):
             return self.original_name, string
         return self.original_name, f"self.{name}"
 
-
     def to_python_from_dict_value(self) -> str:
         if isinstance(self.item_type, Array) or isinstance(self.item_type, Object):
             original_name_copy = self.item_type.original_name
-            self.item_type.original_name = 'o'
-            string = f"[{self.item_type.to_python_from_dict_value()} for o in d[{self.original_name!r}]"
+            looped_to_dict_value = self.item_type.to_python_from_dict_value()\
+                .replace(f'd[{self.item_type.original_name!r}]', 'o', 1)
+            string = f"[{looped_to_dict_value} for o in d[{self.original_name!r}]]"
             self.item_type.original_name = original_name_copy
             return string
         return f"d[{self.original_name!r}]"
@@ -322,7 +323,6 @@ class Object(Type):
 
     def to_python_from_dict_value(self) -> str:
         return f"""{self.to_python.strip("'")}.from_dict(d[{self.original_name!r}])"""
-
 
     @property
     def to_python_value(self) -> str:
