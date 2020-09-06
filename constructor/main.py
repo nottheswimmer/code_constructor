@@ -160,7 +160,7 @@ class MetaClass:
         return '\n'.join(lines)
 
     def generate_python_class_lines(self):
-        class_lines = [f"class {self.python_name}"]
+        class_lines = [f"class {self.python_name}:"]
         class_lines += self.generate_python_constructor_lines()
         class_lines += self.generate_python_from_dict_classmethod_lines()
         class_lines += self.generate_python_from_json_classmethod_lines()
