@@ -120,8 +120,10 @@ class AbstractTestClass(ABC):
     def test_python_to_json_output_matches_original_structure(self):
         base_class = getattr(self.python_module, self.class_name)
         base_object = base_class.from_json(self.test_json)
-        test_json = base_object.to_json()
-        self.assertEqual(json.loads(test_json), json.loads(self.test_json))
+        processed_json = base_object.to_json()
+        print("A:", json.loads(self.test_json))
+        print("B:", json.loads(processed_json))
+        self.assertEqual(json.loads(self.test_json), json.loads(processed_json))
 
     def test_java_compiles(self):
         print(self.java_source)
@@ -495,6 +497,9 @@ class TestEmpty(AbstractTestClass, TestCase):
     test_json = "{}"
 
 
+class TestTopLevelEmptyArray(AbstractTestClass, TestCase):
+    test_json = "[]"
+
 class TestEmptyArray(AbstractTestClass, TestCase):
     test_json = """\
     {
@@ -559,3 +564,12 @@ class TestSeeminglyDifferentStructuresAppearingWithSameName(AbstractTestClass, T
         "who": {"person": {"age": 25, "favorite_color": "red"}}
      }"""
     expected_classes = (class_name, "Bf", "Gf", "Person", "Person2", "Person3")
+
+class TestEmptyStructName(AbstractTestClass, TestCase):
+    class_name = "SomeClass"
+    test_json = """\
+    {
+        "": {"hello": "world"}
+    }
+    """
+    expected_classes = (class_name, "ClassName")
