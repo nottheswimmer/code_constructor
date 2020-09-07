@@ -140,9 +140,31 @@ class String(Type):
 
 class Integer(Type):
     to_python = 'int'
-    to_java = 'int'
-    to_go = 'int'
-    to_c = 'int'
+
+    @property
+    def to_java(self) -> str:
+        if self.max_value >= 2**31 or self.min_value < -2**31:
+            return 'long'
+        return 'int'
+
+    @property
+    def to_go(self) -> str:
+        if self.max_value >= 2**31 or self.min_value < -2**31:
+                return 'int64'
+        return 'int'
+
+    @property
+    def to_c(self) -> str:
+        if self.max_value >= 2**61 or self.min_value < -2**61:
+            return 'long long'
+        if self.max_value >= 2**31 or self.min_value < -2**31:
+            return 'long'
+        return 'int'
+
+    def __init__(self, value: int, original_name: str):
+        super().__init__(value, original_name)
+        self.max_value = value
+        self.min_value = value
 
     @property
     def to_python_value(self) -> str:
@@ -150,6 +172,8 @@ class Integer(Type):
 
     @property
     def to_java_value(self) -> str:
+        if self.to_java == 'long':
+            return repr(self.value) + 'L'
         return repr(self.value)
 
     @property
