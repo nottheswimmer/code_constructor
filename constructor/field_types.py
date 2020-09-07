@@ -28,18 +28,13 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List, Tuple, Dict, Set
 
 if TYPE_CHECKING:
-    from constructor.main import MetaClass
+    from constructor.main import MetaClass # pragma: no cover
 
 
 class Type(ABC):
     def __init__(self, value, original_name: str):
         self.value = value
         self.original_name = original_name
-
-    @property
-    @abstractmethod
-    def to_python(self) -> str:
-        pass
 
     def to_python_to_dict_pair(self, name) -> Tuple[str, str]:
         return self.original_name, f"self.{name}"
@@ -48,42 +43,8 @@ class Type(ABC):
         return f"d[{self.original_name!r}]"
 
     @property
-    @abstractmethod
-    def to_python_value(self) -> str:
-        pass
-
-    @property
-    @abstractmethod
-    def to_java_value(self) -> str:
-        pass
-
-    @property
-    @abstractmethod
-    def to_c_value(self) -> str:
-        pass
-
-    @property
-    @abstractmethod
-    def to_java(self) -> str:
-        pass
-
-    @property
-    @abstractmethod
-    def to_go(self) -> str:
-        pass
-
-    @property
-    @abstractmethod
-    def to_c(self) -> str:
-        pass
-
-    @property
     def c_includes(self) -> Set[str]:
         return set()
-
-    @abstractmethod
-    def to_c_printf(self, name: str) -> str:
-        pass
 
     @property
     def c_is_variable_length_array(self) -> bool:
@@ -103,6 +64,45 @@ class Type(ABC):
     @property
     def embedded_objects(self) -> List['Object']:
         return []
+
+    @property
+    @abstractmethod
+    def to_python(self) -> str:
+        pass  # pragma: no cover
+
+    @property
+    @abstractmethod
+    def to_python_value(self) -> str:
+        pass  # pragma: no cover
+
+    @property
+    @abstractmethod
+    def to_java_value(self) -> str:
+        pass  # pragma: no cover
+
+    @property
+    @abstractmethod
+    def to_c_value(self) -> str:
+        pass  # pragma: no cover
+
+    @property
+    @abstractmethod
+    def to_java(self) -> str:
+        pass  # pragma: no cover
+
+    @property
+    @abstractmethod
+    def to_go(self) -> str:
+        pass  # pragma: no cover
+
+    @property
+    @abstractmethod
+    def to_c(self) -> str:
+        pass  # pragma: no cover
+
+    @abstractmethod
+    def to_c_printf(self, name: str) -> str:
+        pass  # pragma: no cover
 
 
 class String(Type):
