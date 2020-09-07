@@ -87,16 +87,16 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
                                               f"{primitive_type.to_java} vs {new_primitive_type.to_java})")
                 # We want the maximum length seen for the array size
                 primitive_type.length = max(primitive_type.length, len(primitive))
-            if isinstance(subprimative_type, field_types.Integer):
-                new_primitive_type.item_type.max_value = max(new_primitive_type.item_type.max_value,
-                                                             subprimative_type.value)
-                new_primitive_type.item_type.min_value = min(new_primitive_type.item_type.min_value,
-                                                             subprimative_type.value)
-            elif isinstance(subprimative_type, field_types.Double):
-                new_primitive_type.item_type.max_value = max(new_primitive_type.item_type.max_value,
-                                                             subprimative_type.value)
-                new_primitive_type.item_type.min_value = min(new_primitive_type.item_type.min_value,
-                                                             subprimative_type.value)
+                if isinstance(subprimative_type, field_types.Integer):
+                    new_primitive_type.item_type.max_value = max(new_primitive_type.item_type.max_value,
+                                                                 subprimative_type.value)
+                    new_primitive_type.item_type.min_value = min(new_primitive_type.item_type.min_value,
+                                                                 subprimative_type.value)
+                elif isinstance(subprimative_type, field_types.Double):
+                    new_primitive_type.item_type.max_value = max(new_primitive_type.item_type.max_value,
+                                                                 subprimative_type.value)
+                    new_primitive_type.item_type.min_value = min(new_primitive_type.item_type.min_value,
+                                                                 subprimative_type.value)
         return primitive_type
 
     # Objects
