@@ -21,19 +21,17 @@ IS_WINDOWS = os.name == 'nt'
 
 class AbstractTestClass(ABC):
     @property
-    @abstractmethod
     def class_name(self) -> str:
-        pass
+        return 'DefaultClassName'
 
     @property
     @abstractmethod
     def test_json(self) -> str:
-        pass
+        pass  # pragma: no cover
 
     @property
-    @abstractmethod
     def expected_classes(self) -> Tuple[str]:
-        pass
+        return (self.class_name, )
 
     def setUp(self):
         self.meta_class = MetaClass.from_json(self.class_name, self.test_json)
@@ -152,7 +150,6 @@ class TestString(AbstractTestClass, TestCase):
     "name": "Michael Phelps"
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestEmptyString(AbstractTestClass, TestCase):
@@ -162,7 +159,6 @@ class TestEmptyString(AbstractTestClass, TestCase):
     "motto": ""
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestSignedPositiveNumber1Byte(AbstractTestClass, TestCase):
@@ -172,7 +168,6 @@ class TestSignedPositiveNumber1Byte(AbstractTestClass, TestCase):
     "age": 127
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestSignedPositiveNumber2Byte(AbstractTestClass, TestCase):
@@ -182,7 +177,6 @@ class TestSignedPositiveNumber2Byte(AbstractTestClass, TestCase):
     "age": 32767
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestSignedPositiveNumber4Byte(AbstractTestClass, TestCase):
@@ -192,7 +186,6 @@ class TestSignedPositiveNumber4Byte(AbstractTestClass, TestCase):
     "age": 2147483647
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestSignedPositiveNumber8Byte(AbstractTestClass, TestCase):
@@ -202,7 +195,6 @@ class TestSignedPositiveNumber8Byte(AbstractTestClass, TestCase):
     "age": 9223372036854775807
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestSignedNegativeNumber1Byte(AbstractTestClass, TestCase):
@@ -212,7 +204,6 @@ class TestSignedNegativeNumber1Byte(AbstractTestClass, TestCase):
     "age": -128
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestSignedNegativeNumber2Byte(AbstractTestClass, TestCase):
@@ -222,7 +213,6 @@ class TestSignedNegativeNumber2Byte(AbstractTestClass, TestCase):
     "age": -32768
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestSignedNegativeNumber4Byte(AbstractTestClass, TestCase):
@@ -232,7 +222,6 @@ class TestSignedNegativeNumber4Byte(AbstractTestClass, TestCase):
     "age": -2147483648
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestSignedNegativeNumber8Byte(AbstractTestClass, TestCase):
@@ -242,7 +231,6 @@ class TestSignedNegativeNumber8Byte(AbstractTestClass, TestCase):
     "age": -9223372036854775808
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestLargePositiveFloat(AbstractTestClass, TestCase):
@@ -252,7 +240,6 @@ class TestLargePositiveFloat(AbstractTestClass, TestCase):
     "Miles": 3.4e+38
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestLargePositiveDouble(AbstractTestClass, TestCase):
@@ -262,7 +249,6 @@ class TestLargePositiveDouble(AbstractTestClass, TestCase):
     "Miles": 1.7e+308
 }
 """
-    expected_classes = (class_name,)
 
 
 # Python is going to treat anything greater than 1.7e+308 as infinity. Good luck.
@@ -273,7 +259,6 @@ class TestLargePositiveLongDouble(AbstractTestClass, TestCase):
     "Miles": 1.1e+4932
 }
 """
-    expected_classes = (class_name,)
 
 class TestSmallPositiveFloat(AbstractTestClass, TestCase):
     class_name = "Car"
@@ -282,7 +267,6 @@ class TestSmallPositiveFloat(AbstractTestClass, TestCase):
     "Miles": 1.2e-38
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestSmallPositiveDouble(AbstractTestClass, TestCase):
@@ -292,7 +276,6 @@ class TestSmallPositiveDouble(AbstractTestClass, TestCase):
     "Miles": 2.3e-308
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestSmallPositiveLongDouble(AbstractTestClass, TestCase):
@@ -302,7 +285,6 @@ class TestSmallPositiveLongDouble(AbstractTestClass, TestCase):
     "Miles": 3.4e-4932
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestLargeNegativeFloat(AbstractTestClass, TestCase):
@@ -312,7 +294,6 @@ class TestLargeNegativeFloat(AbstractTestClass, TestCase):
     "Miles": -3.4e+38
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestLargeNegativeDouble(AbstractTestClass, TestCase):
@@ -322,7 +303,6 @@ class TestLargeNegativeDouble(AbstractTestClass, TestCase):
     "Miles": -1.7e+308
 }
 """
-    expected_classes = (class_name,)
 
 
 # Python is going to treat anything greater than 1.7e+308 as infinity. Good luck.
@@ -333,7 +313,6 @@ class TestLargeNegativeLongDouble(AbstractTestClass, TestCase):
     "Miles": -1.1e+4932
 }
 """
-    expected_classes = (class_name,)
 
 class TestSmallNegativeFloat(AbstractTestClass, TestCase):
     class_name = "Car"
@@ -342,7 +321,6 @@ class TestSmallNegativeFloat(AbstractTestClass, TestCase):
     "Miles": -1.2e-38
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestSmallNegativeDouble(AbstractTestClass, TestCase):
@@ -352,7 +330,6 @@ class TestSmallNegativeDouble(AbstractTestClass, TestCase):
     "Miles": -2.3e-308
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestSmallNegativeLongDouble(AbstractTestClass, TestCase):
@@ -362,7 +339,6 @@ class TestSmallNegativeLongDouble(AbstractTestClass, TestCase):
     "Miles": -3.4e-4932
 }
 """
-    expected_classes = (class_name,)
 
 
 
@@ -373,7 +349,6 @@ class TestUnsignedNumber1Byte(AbstractTestClass, TestCase):
     "age": 255
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestUnsignedNumber2Byte(AbstractTestClass, TestCase):
@@ -383,7 +358,6 @@ class TestUnsignedNumber2Byte(AbstractTestClass, TestCase):
     "age": 65535
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestUnsignedNumber4Byte(AbstractTestClass, TestCase):
@@ -393,7 +367,6 @@ class TestUnsignedNumber4Byte(AbstractTestClass, TestCase):
     "age": 4294967295
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestUnsignedNumber8Byte(AbstractTestClass, TestCase):
@@ -403,7 +376,6 @@ class TestUnsignedNumber8Byte(AbstractTestClass, TestCase):
     "age": 18446744073709551615
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestZeroInteger(AbstractTestClass, TestCase):
@@ -413,7 +385,6 @@ class TestZeroInteger(AbstractTestClass, TestCase):
     "unique_thoughts": 0
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestZeroFloat(AbstractTestClass, TestCase):
@@ -423,37 +394,30 @@ class TestZeroFloat(AbstractTestClass, TestCase):
     "balance": 0.0
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestBooleanTrue(AbstractTestClass, TestCase):
-    class_name = "Person"
     test_json = """\
 {
     "happy": true
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestBooleanFalse(AbstractTestClass, TestCase):
-    class_name = "Person"
     test_json = """\
 {
     "happy": false
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestNull(AbstractTestClass, TestCase):
-    class_name = "Person"
     test_json = """\
 {
     "happy": null
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestStruct(AbstractTestClass, TestCase):
@@ -467,13 +431,11 @@ class TestStruct(AbstractTestClass, TestCase):
 
 
 class TestSignedPositiveInteger1ByteArrays(AbstractTestClass, TestCase):
-    class_name = "Person"
     test_json = """\
 {
     "favorte_numbers": [1, 2, 3]
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestBooleanArrays(AbstractTestClass, TestCase):
@@ -483,17 +445,14 @@ class TestBooleanArrays(AbstractTestClass, TestCase):
     "results": [false, true, true, true, false, true, true, false, false]
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestStringArrays(AbstractTestClass, TestCase):
-    class_name = "Person"
     test_json = """\
 {
     "programming_languages": ["python", "rust"]
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestStructArrays(AbstractTestClass, TestCase):
@@ -510,62 +469,47 @@ class TestStructArrays(AbstractTestClass, TestCase):
 
 
 class Test2dSignedPositiveInteger1ByteArrays(AbstractTestClass, TestCase):
-    class_name = "Person"
     test_json = """\
 {
     "favorte_number_lists": [[1, 2, 3], [9, 22]]
 }
 """
-    expected_classes = (class_name,)
-
 
 class Test3dSignedPositiveInteger1ByteArrays(AbstractTestClass, TestCase):
-    class_name = "Person"
     test_json = """\
 {
     "favorte_number_lists_lists": [[[1, 2, 3], [9, 22]], [[1, 7], [22]]]
 }
 """
-    expected_classes = (class_name,)
 
 
 class TestMultiTypeArray(AbstractTestClass, TestCase):
-    class_name = "Person"
     test_json = """\
     {
         "favorite_words_and_numbers": ["cake", 17, "hotdogs", "42"]
     }
     """
-    expected_classes = (class_name,)
 
 
 class TestEmpty(AbstractTestClass, TestCase):
-    class_name = "Empty"
     test_json = "{}"
-    expected_classes = (class_name,)
 
 
 class TestEmptyArray(AbstractTestClass, TestCase):
-    class_name = "EmptyList"
     test_json = """\
     {
         "stuff": []
     }
     """
-    expected_classes = (class_name,)
 
 class TestTopLevelPositiveInteger1ByteArray(AbstractTestClass, TestCase):
-    class_name = "NumberListHolder"
     test_json = """\
     { 1, 2, 3, 4, 5 }
     """
-    expected_classes = (class_name,)
 
 
 class TestTopLevelContainsEmptyArray(AbstractTestClass, TestCase):
-    class_name = "EmptyList"
     test_json = """{ [] }"""
-    expected_classes = (class_name,)
 
 
 class TestClassesAppearingInTwoFields(AbstractTestClass, TestCase):
@@ -577,16 +521,13 @@ class TestClassesAppearingInTwoFields(AbstractTestClass, TestCase):
     expected_classes = (class_name, "Bf", "Gf", "Person")
 
 class TestEmptyFieldName(AbstractTestClass, TestCase):
-    class_name = "EmptyKeys"
     test_json = """\
     {
         "": "value"
     }
     """
-    expected_classes = (class_name,)
 
 class TestKeyWordsInFieldName(AbstractTestClass, TestCase):
-    class_name = "KeyWords"
     test_json = """\
     {
         "for": "for python, java",
@@ -598,11 +539,9 @@ class TestKeyWordsInFieldName(AbstractTestClass, TestCase):
         "while": "for python, c"
     }
     """
-    expected_classes = (class_name,)
 
-# TODO: Don't just check if it compiles. Check and make sure it doesn't do it.
+# TODO: Don't just check if it compiles. Check and make sure it doesn't shadow builtins.
 class TestBuiltinsInFieldName(AbstractTestClass, TestCase):
-    class_name = "KeyWords"
     test_json = """\
     {
         "max": "for python",
@@ -610,4 +549,13 @@ class TestBuiltinsInFieldName(AbstractTestClass, TestCase):
         "clone": "for java"
     }
     """
-    expected_classes = (class_name,)
+
+
+class TestSeeminglyDifferentStructuresAppearingWithSameName(AbstractTestClass, TestCase):
+    class_name = "Couple"
+    test_json = """{ 
+        "bf": {"person": {"favorite_color": "blue"}},
+        "gf": {"person": {"name": "Quynh Anh", "age": 19}},
+        "who": {"person": {"age": 25, "favorite_color": "red"}}
+     }"""
+    expected_classes = (class_name, "Bf", "Gf", "Person", "Person2", "Person3")

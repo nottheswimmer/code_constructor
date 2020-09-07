@@ -102,7 +102,7 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
             if field_name not in UNIQUE_CLASSNAMES:
                 UNIQUE_CLASSNAMES.add(field_name)
             else:
-                i = 1
+                i = 2
                 while f"{field_name}{i}" in UNIQUE_CLASSNAMES:
                     i += 1
                 primitive_class.name = f"{field_name}{i}"
