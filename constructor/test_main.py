@@ -555,8 +555,59 @@ class TestEmptyArray(AbstractTestClass, TestCase):
     expected_classes = (class_name,)
 
 class TestTopLevelPositiveInteger1ByteArray(AbstractTestClass, TestCase):
-    class_name = "EmptyList"
+    class_name = "NumberListHolder"
     test_json = """\
     { 1, 2, 3, 4, 5 }
+    """
+    expected_classes = (class_name,)
+
+
+class TestTopLevelContainsEmptyArray(AbstractTestClass, TestCase):
+    class_name = "EmptyList"
+    test_json = """{ [] }"""
+    expected_classes = (class_name,)
+
+
+class TestClassesAppearingInTwoFields(AbstractTestClass, TestCase):
+    class_name = "Couple"
+    test_json = """{ 
+        "bf": {"person": {"name": "Michael", "age": 24}},
+        "gf": {"person": {"name": "Quynh Anh", "age": 19}}
+     }"""
+    expected_classes = (class_name, "Bf", "Gf", "Person")
+
+class TestEmptyFieldName(AbstractTestClass, TestCase):
+    class_name = "EmptyKeys"
+    test_json = """\
+    {
+        "": "value"
+    }
+    """
+    expected_classes = (class_name,)
+
+class TestKeyWordsInFieldName(AbstractTestClass, TestCase):
+    class_name = "KeyWords"
+    test_json = """\
+    {
+        "for": "for python, java",
+        "in": "for python",
+        "None": "for python",
+        "True": "for python",
+        "False": "for python",
+        "const": "for go",
+        "while": "for python, c"
+    }
+    """
+    expected_classes = (class_name,)
+
+# TODO: Don't just check if it compiles. Check and make sure it doesn't do it.
+class TestBuiltinsInFieldName(AbstractTestClass, TestCase):
+    class_name = "KeyWords"
+    test_json = """\
+    {
+        "max": "for python",
+        "recover": "for go",
+        "clone": "for java"
+    }
     """
     expected_classes = (class_name,)
