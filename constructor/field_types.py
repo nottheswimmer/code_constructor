@@ -188,14 +188,48 @@ class Double(Type):
     to_python = 'float'
     to_java = 'double'
     to_go = 'float64'
-    to_c = 'double'
+
+    def __init__(self, value: int, original_name: str):
+        super().__init__(value, original_name)
+        self.max_value = value
+        self.min_value = value
+
+    @property
+    def to_c(self) -> str:
+        if self.max_value >= 1.7E+308 or self.min_value < -2.3E-308:
+            return 'long double'
+        return 'double'
 
     @property
     def to_python_value(self) -> str:
+        if self.max_value == float('inf'):
+            return 'float("inf")'
+        if self.min_value == float('-inf'):
+            return 'float("-inf")'
+        if self.min_value == float('nan'):
+            return 'float("nan")'
         return repr(self.value)
 
     @property
     def to_java_value(self) -> str:
+        if self.max_value == float('inf'):
+            return "Float.POSITIVE_INFINITY"
+        if self.min_value == float('-inf'):
+            return "Float.NEGATIVE_INFINITY"
+        if self.min_value == float('nan'):
+            return "Float.NaN"
+        return repr(self.value)
+
+    @property
+    def to_go_value(self) -> str:
+        # TODO: Go imports for math will be needed once there's
+        #  an actual usage example for Go
+        if self.max_value == float('inf'):
+            return repr("math.Inf(1)")
+        if self.min_value == float('-inf'):
+            return repr("math.Inf(-1)")
+        if self.min_value == float('nan'):
+            return repr("math.NaN()")
         return repr(self.value)
 
     @property

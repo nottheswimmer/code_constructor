@@ -563,7 +563,7 @@ class TestSeeminglyDifferentStructuresAppearingWithSameName(AbstractTestClass, T
         "gf": {"person": {"name": "Quynh Anh", "age": 19}},
         "who": {"person": {"age": 25, "favorite_color": "red"}}
      }"""
-    expected_classes = (class_name, "Bf", "Gf", "Person", "Person2", "Person3")
+    expected_classes = (class_name, "Bf", "Gf", "Who", "Person", "Person2", "Person3")
 
 class TestEmptyStructName(AbstractTestClass, TestCase):
     class_name = "SomeClass"

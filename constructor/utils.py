@@ -92,6 +92,11 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
                                                              subprimative_type.value)
                 new_primitive_type.item_type.min_value = min(new_primitive_type.item_type.min_value,
                                                              subprimative_type.value)
+            elif isinstance(subprimative_type, field_types.Double):
+                new_primitive_type.item_type.max_value = max(new_primitive_type.item_type.max_value,
+                                                             subprimative_type.value)
+                new_primitive_type.item_type.min_value = min(new_primitive_type.item_type.min_value,
+                                                             subprimative_type.value)
         return primitive_type
 
     # Objects
@@ -110,7 +115,7 @@ def primitive_to_type(primitive: Union[str, bool, int, list, dict], field_name: 
                 i = 2
                 while f"{field_name}{i}" in UNIQUE_CLASSNAMES:
                     i += 1
-                primitive_class.name = f"{field_name}{i}"
+                primitive_class.name = f"{any_to_upper_camel(field_name)}{i}"
                 UNIQUE_CLASSNAMES.add(f"{field_name}{i}")
             CLASS_SIGNATURES_TO_NAME[signature] = primitive_class.name
         return field_types.Object(value=primitive, original_name=field_name, object_class=primitive_class)
